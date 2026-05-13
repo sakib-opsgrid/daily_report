@@ -242,10 +242,10 @@ function buildScreenshot(prefix){
         </div>
       </div>
       ${tableHtml}
-      <div class="ss-footer">
-        <div><strong>Reporter:</strong> ${reporter}</div>
-        <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
-      </div>
+    </div>
+    <div class="ss-footer">
+      <div><strong>Reporter:</strong> ${reporter}</div>
+      <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
     </div>
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
@@ -438,10 +438,10 @@ function buildScreenshot1(prefix){
         </div>
       </div>
       ${tableHtml}
-      <div class="ss-footer">
-        <div><strong>Reporter:</strong> ${reporter}</div>
-        <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
-      </div>
+    </div>
+    <div class="ss-footer">
+      <div><strong>Reporter:</strong> ${reporter}</div>
+      <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
     </div>
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
