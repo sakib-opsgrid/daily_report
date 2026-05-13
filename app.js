@@ -249,6 +249,7 @@ function buildScreenshot(prefix){
     </div>
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
+      <button class="btn-copy-img" onclick="copyReportText('${typeLabel}','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
     </div>`;
 
   ssEl.classList.add('show');
@@ -444,6 +445,7 @@ function buildScreenshot1(prefix){
     </div>
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
+      <button class="btn-copy-img" onclick="copyReportText('${typeLabel}','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
     </div>`;
   ssEl.classList.add('show');
   setTimeout(() => ssEl.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
@@ -725,6 +727,16 @@ function doCopy(id, btn){
   const el = document.getElementById(id);
   if(el) el.addEventListener('input', refreshDLR);
 });
+// ── Copy report caption text ──
+function copyReportText(typeLabel, period, reporter, statusStr, btn) {
+  const text = `${typeLabel},\n${period}\n\nReporter: ${reporter}\nStatus  : ${statusStr}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }).catch(() => { prompt('Copy this:', text); });
+}
+
 // ── Copy as Image ──
 async function copyAsImage(innerId, btn) {
   const el = document.getElementById(innerId);
