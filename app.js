@@ -745,11 +745,15 @@ async function copyAsImage(innerId, btn) {
   btn.textContent = 'Generating…';
   btn.disabled = true;
   try {
+    const rect = el.getBoundingClientRect();
     const canvas = await html2canvas(el, {
       backgroundColor: '#ffffff',
       scale: 2,
       useCORS: true,
-      logging: false
+      logging: false,
+      width: rect.width,
+      height: rect.height,
+      windowWidth: rect.width,
     });
     canvas.toBlob(async blob => {
       try {
@@ -758,7 +762,6 @@ async function copyAsImage(innerId, btn) {
         ]);
         btn.textContent = '✓ Image Copied!';
       } catch (err) {
-        // Fallback: open in new tab for manual save
         const url = canvas.toDataURL('image/png');
         const a = document.createElement('a');
         a.href = url;
