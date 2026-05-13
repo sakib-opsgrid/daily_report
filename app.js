@@ -546,7 +546,13 @@ function httpView(which, el){
 }
 
 // ── DLR ──
-const dlrData = { '1000':0, '1020':0, '1052':0 };
+const DLR_KNOWN = {
+  '1000': 'Success',
+  '1020': 'Internal Server Error',
+  '1052': 'Submission record not found'
+};
+// Dynamic store: key = statusCode string, value = count
+let dlrData = {};
 
 function parseDLR(file){
   if(!file) return;
@@ -560,32 +566,59 @@ function parseDLR(file){
       statusEl.textContent = `⚠ message_body column not found`;
       return;
     }
-    dlrData['1000']=0; dlrData['1020']=0; dlrData['1052']=0;
+
+    dlrData = {};
     rows.forEach(r => {
       const body = r[bodyKey]||'';
-      if(body.includes('statusCode=1000')) dlrData['1000']++;
-      else if(body.includes('statusCode=1020')) dlrData['1020']++;
-      else if(body.includes('statusCode=1052')) dlrData['1052']++;
+      const match = body.match(/statusCode=(\d+)/);
+      if(match){
+        const code = match[1];
+        dlrData[code] = (dlrData[code]||0) + 1;
+      }
     });
-    document.getElementById('dlr-1000').textContent = dlrData['1000'];
-    document.getElementById('dlr-1020').textContent = dlrData['1020'];
-    document.getElementById('dlr-1052').textContent = dlrData['1052'];
-    document.getElementById('dlr-m-1000').value = dlrData['1000'];
-    document.getElementById('dlr-m-1020').value = dlrData['1020'];
-    document.getElementById('dlr-m-1052').value = dlrData['1052'];
+
+    renderDLRCounts();
     statusEl.textContent = `✓ ${rows.length} rows parsed`;
     document.getElementById('zone-dlr').classList.add('loaded');
-    refreshDLR();
   };
   reader.readAsText(file);
 }
 
-function updateDLRManual(){
-  ['1000','1020','1052'].forEach(code => {
-    const v = parseInt(document.getElementById(`dlr-m-${code}`).value)||0;
-    dlrData[code] = v;
-    document.getElementById(`dlr-${code}`).textContent = v;
-  });
+function renderDLRCounts(){
+  // Rebuild the counts display and manual override boxes dynamically
+  const countsBox = document.getElementById('dlr-counts-box');
+  const manualBox = document.getElementById('dlr-manual-box');
+
+  const allCodes = Object.keys(dlrData).sort();
+
+  // Counts display
+  countsBox.innerHTML = allCodes.map(code => `
+    <div class="dlr-val-box">
+      <div class="dlr-code">statusCode=${code}</div>
+      <div class="dlr-count">${dlrData[code]}</div>
+      <div class="dlr-label">${DLR_KNOWN[code]||'Unknown'}</div>
+    </div>`).join('');
+
+  // Manual override
+  manualBox.innerHTML = `<div class="card-label">Manual Override (if needed)</div>
+    <div class="field-grid-3" style="margin-top:6px;">
+      ${allCodes.map(code => `
+        <div class="field-block">
+          <label>${code}</label>
+          <input type="number" id="dlr-m-${code}" value="${dlrData[code]}" min="0" oninput="updateDLRManual('${code}')">
+        </div>`).join('')}
+    </div>`;
+}
+
+function updateDLRManual(code){
+  const v = parseInt(document.getElementById(`dlr-m-${code}`).value)||0;
+  dlrData[code] = v;
+  // Update count display if element exists
+  const countsBox = document.getElementById('dlr-counts-box');
+  const countEl = countsBox.querySelectorAll('.dlr-count');
+  const allCodes = Object.keys(dlrData).sort();
+  const idx = allCodes.indexOf(code);
+  if(countEl[idx]) countEl[idx].textContent = v;
 }
 
 function buildDLRScreenshot(){
@@ -598,10 +631,18 @@ function buildDLRScreenshot(){
   const issue    = document.getElementById('dlr-issue').value.trim();
   const statusStr= status==='Normal'?'Normal':(issue||'—');
   const period   = `${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
-  const v1000 = dlrData['1000'];
-  const v1020 = dlrData['1020'];
-  const v1052 = dlrData['1052'];
   const statusClass = status==='Normal'?'ss-status-normal':'ss-status-issue';
+
+  const allCodes = Object.keys(dlrData).sort();
+
+  const rows = allCodes.length > 0
+    ? allCodes.map(code => `
+        <tr>
+          <td>${code}</td>
+          <td style="text-align:left;">${DLR_KNOWN[code]||'—'}</td>
+          <td>${dlrData[code]||''}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="3" style="text-align:center;color:#aaa;">No data</td></tr>`;
 
   const tableHtml = `
     <table class="ss-table">
@@ -612,11 +653,7 @@ function buildDLRScreenshot(){
           <th>Count</th>
         </tr>
       </thead>
-      <tbody>
-        <tr><td>1000</td><td style="text-align:left;">Success</td><td>${v1000||''}</td></tr>
-        <tr><td>1020</td><td style="text-align:left;">Internal Server Error</td><td>${v1020||''}</td></tr>
-        <tr><td>1052</td><td style="text-align:left;">Submission record not found</td><td>${v1052||''}</td></tr>
-      </tbody>
+      <tbody>${rows}</tbody>
     </table>`;
 
   const ssEl = document.getElementById('ss-dlr');

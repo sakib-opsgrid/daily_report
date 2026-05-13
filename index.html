@@ -385,33 +385,33 @@
         <div class="dlr-val-box">
           <div class="dlr-code">statusCode=1000</div>
           <div class="dlr-count" id="dlr-1000">0</div>
-          <div class="dlr-label">Delivered</div>
+          <div class="dlr-label">Success</div>
         </div>
         <div class="dlr-val-box">
           <div class="dlr-code">statusCode=1020</div>
           <div class="dlr-count" id="dlr-1020">0</div>
-          <div class="dlr-label">Undelivered</div>
+          <div class="dlr-label">Internal Server Error</div>
         </div>
         <div class="dlr-val-box">
           <div class="dlr-code">statusCode=1052</div>
           <div class="dlr-count" id="dlr-1052">0</div>
-          <div class="dlr-label">Expired</div>
+          <div class="dlr-label">Submission record not found</div>
         </div>
       </div>
-      <div style="margin-top:10px;">
+      <div style="margin-top:10px;" id="dlr-manual-box">
         <div class="card-label">Manual Override (if needed)</div>
         <div class="field-grid-3" style="margin-top:6px;">
           <div class="field-block">
-            <label>1000 count</label>
-            <input type="number" id="dlr-m-1000" placeholder="0" oninput="updateDLRManual()">
+            <label>1000</label>
+            <input type="number" id="dlr-m-1000" placeholder="0" oninput="updateDLRManual('1000')">
           </div>
           <div class="field-block">
-            <label>1020 count</label>
-            <input type="number" id="dlr-m-1020" placeholder="0" oninput="updateDLRManual()">
+            <label>1020</label>
+            <input type="number" id="dlr-m-1020" placeholder="0" oninput="updateDLRManual('1020')">
           </div>
           <div class="field-block">
-            <label>1052 count</label>
-            <input type="number" id="dlr-m-1052" placeholder="0" oninput="updateDLRManual()">
+            <label>1052</label>
+            <input type="number" id="dlr-m-1052" placeholder="0" oninput="updateDLRManual('1052')">
           </div>
         </div>
       </div>
@@ -437,24 +437,11 @@
       </div>
     </div>
 
-    <div class="sub-tabs">
-      <button class="sub-tab active" onclick="dlrView('preview',this)">Preview</button>
-      <button class="sub-tab" onclick="dlrView('copy',this)">Copy Text</button>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="buildDLRScreenshot()">Generate Screenshot View</button>
     </div>
-    <div id="dlr-preview">
-      <div class="wa-wrap">
-        <div class="wa-bubble">
-          <div class="wa-inner" id="dlr-wa-content"></div>
-          <div class="wa-time-row" id="dlr-wa-time"></div>
-        </div>
-      </div>
-    </div>
-    <div id="dlr-copy" style="display:none;">
-      <div class="copy-pre" id="dlr-copy-text"></div>
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="doCopy('dlr-copy-text', this)">Copy to Clipboard</button>
-      </div>
-    </div>
+
+    <div class="screenshot-card" id="ss-dlr"></div>
   </div>
 </div>
 
