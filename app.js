@@ -586,10 +586,9 @@ function updateDLRManual(){
     dlrData[code] = v;
     document.getElementById(`dlr-${code}`).textContent = v;
   });
-  refreshDLR();
 }
 
-function refreshDLR(){
+function buildDLRScreenshot(){
   const fromDate = document.getElementById('dlr-from-date').value;
   const fromTime = document.getElementById('dlr-from-time').value;
   const toDate   = document.getElementById('dlr-to-date').value;
@@ -599,32 +598,51 @@ function refreshDLR(){
   const issue    = document.getElementById('dlr-issue').value.trim();
   const statusStr= status==='Normal'?'Normal':(issue||'—');
   const period   = `${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
-  const v1000 = dlrData['1000']; const v1020 = dlrData['1020']; const v1052 = dlrData['1052'];
+  const v1000 = dlrData['1000'];
+  const v1020 = dlrData['1020'];
+  const v1052 = dlrData['1052'];
+  const statusClass = status==='Normal'?'ss-status-normal':'ss-status-issue';
 
-  const body =
-`DLR Report
-${period}
+  const tableHtml = `
+    <table class="ss-table">
+      <thead>
+        <tr>
+          <th style="text-align:left;">Status Code</th>
+          <th style="text-align:left;">Error Description</th>
+          <th>Count</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1000</td><td style="text-align:left;">Success</td><td>${v1000||''}</td></tr>
+        <tr><td>1020</td><td style="text-align:left;">Internal Server Error</td><td>${v1020||''}</td></tr>
+        <tr><td>1052</td><td style="text-align:left;">Submission record not found</td><td>${v1052||''}</td></tr>
+      </tbody>
+    </table>`;
 
-statusCode=1000 : ${v1000}
-statusCode=1020 : ${v1020}
-statusCode=1052 : ${v1052}
+  const ssEl = document.getElementById('ss-dlr');
+  ssEl.innerHTML = `
+    <div class="ss-inner" id="ss-inner-dlr">
+      <div class="ss-header">
+        <div>
+          <div class="ss-title">DLR Report</div>
+          <div class="ss-meta">${period}</div>
+        </div>
+      </div>
+      ${tableHtml}
+    </div>
+    <div class="ss-footer">
+      <div><strong>Reporter:</strong> ${reporter}</div>
+      <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
+    </div>
+    <div class="ss-actions">
+      <button class="btn-copy-img" onclick="copyAsImage('ss-inner-dlr', this)">📋 Copy as Image</button>
+      <button class="btn-copy-img" onclick="copyReportText('DLR','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
+    </div>`;
 
-Reporter: ${reporter}
-Status  : ${statusStr}`;
-
-  document.getElementById('dlr-wa-content').textContent = body;
-  document.getElementById('dlr-wa-time').textContent = fmtTimeNow();
-  document.getElementById('dlr-copy-text').textContent = body;
+  ssEl.classList.add('show');
+  setTimeout(() => ssEl.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
 }
-refreshDLR();
 
-function dlrView(which, el){
-  document.getElementById('dlr-preview').style.display = which==='preview'?'block':'none';
-  document.getElementById('dlr-copy').style.display = which==='copy'?'block':'none';
-  el.closest('.sub-tabs').querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  refreshDLR();
-}
 
 // ── Copy text 9xxx ──
 function copyText9(which){
@@ -722,10 +740,6 @@ function doCopy(id, btn){
 ['http-from-date','http-from-time','http-to-date','http-to-time','http-reporter','http-issue'].forEach(id=>{
   const el = document.getElementById(id);
   if(el) el.addEventListener('input', refreshHTTP);
-});
-['dlr-from-date','dlr-from-time','dlr-to-date','dlr-to-time','dlr-reporter','dlr-issue'].forEach(id=>{
-  const el = document.getElementById(id);
-  if(el) el.addEventListener('input', refreshDLR);
 });
 // ── Copy report caption text ──
 function copyReportText(typeLabel, period, reporter, statusStr, btn) {
