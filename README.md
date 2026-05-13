@@ -17,6 +17,18 @@ A browser-based reporting tool for the Service Assurance team. Parses ELK Discov
 
 ---
 
+## Tabs
+
+| Tab | Purpose |
+|---|---|
+| 9xxx Report | A2P response error pivot table (MNO & IPTSP) |
+| 1xxx Report | SMS answer response error pivot table (MNO & IPTSP) |
+| 4xx/5xx Report | HTTP error hits by source operator |
+| DLR Report | Delivery report status code counts |
+| Drive Backup | Download renamed CSVs for Google Drive backup |
+
+---
+
 ## Reports
 
 ### 1. 9xxx Error Report
@@ -26,7 +38,7 @@ Tracks A2P response errors in the 9xxx range.
 - Upload separate CSVs for **MNO** and **IPTSP**
 - Required columns: `clientId`, `a2pResponseCode`
 - Generates a pivot table: **clientId × a2pResponseCode** with Grand Total
-- Output: screenshot-ready white table + image copy to clipboard
+- Output: screenshot-ready white table → **📋 Copy as Image** + **📄 Copy Text**
 
 ### 2. 1xxx Error Report
 
@@ -35,30 +47,41 @@ Tracks SMS answer response errors in the 1xxx range.
 - Upload separate CSVs for **MNO** and **IPTSP**
 - Required columns: `clientId`, `applicableSmsGateway`, `ansResponseCode`
 - Generates a grouped pivot table: **clientId × Gateway × ansResponseCode** with subtotals per gateway
-- Output: screenshot-ready white table + image copy to clipboard
+- Output: screenshot-ready white table → **📋 Copy as Image** + **📄 Copy Text**
 
 ### 3. 4xx / 5xx HTTP Report
 
-Tracks HTTP error hits across all source operators.
+Tracks HTTP error hits across all source operators (GP → ICC).
 
-- Manual entry per source (GP → ICC), broken down by HTTP code
+- Manual entry per source, broken down by HTTP code
 - Codes tracked: `400 401 402 403 404 500 501 502 503 504`
-- Output: live WhatsApp preview + plain text copy
+- Output: live WhatsApp preview + **Copy to Clipboard**
 
 ### 4. DLR Report
 
 Tracks delivery report status code counts.
 
 - Upload ELK Discover CSV or enter counts manually
-- Required column: `message_body` (must contain `statusCode=1000`, `statusCode=1020`, or `statusCode=1052`)
-- Generates a table with status code, error description, and count
-- Output: screenshot-ready white table + image copy to clipboard + text copy
+- Required column: `message_body` (scans for any `statusCode=XXXX` pattern)
+- All status codes detected automatically — not limited to 1000, 1020, 1052
+- Output: screenshot-ready table → **📋 Copy as Image** + **📄 Copy Text**
+
+Known status codes:
 
 | Status Code | Error Description |
 |---|---|
 | 1000 | Success |
 | 1020 | Internal Server Error |
 | 1052 | Submission record not found |
+| others | Displayed as — |
+
+### 5. Drive Backup
+
+Download all four uploaded CSV files with standardised names for Google Drive backup.
+
+- Shows upload status for each file (Ready / Not uploaded)
+- Individual download per file or **⬇ Download All (4 files)** at once
+- Direct link to the Drive backup folder
 
 ---
 
@@ -83,7 +106,7 @@ Tracks delivery report status code counts.
 
 | Column | Description |
 |---|---|
-| `message_body` | Log body containing `statusCode=1000`, `statusCode=1020`, or `statusCode=1052` |
+| `message_body` | Log body containing `statusCode=XXXX` pattern |
 
 > All CSV exports should be from **ELK Discover**. The tool auto-detects column names and is case-insensitive.
 
@@ -100,15 +123,15 @@ Tracks delivery report status code counts.
 7. Click **Generate Screenshot View**
 8. Click **📋 Copy as Image** → paste into WhatsApp
 9. Click **📄 Copy Text** → paste as the caption message
-10. Click **⬇ Download CSV** → upload the renamed file to the appropriate Drive folder
+10. Go to **Drive Backup** tab → **⬇ Download All** → upload to Google Drive
 
 For HTTP reports, use **Copy to Clipboard** and paste as text.
 
 ---
 
-## CSV Backup — Google Drive
+## Drive Backup
 
-After generating a report, the **⬇ Download CSV** button saves the original ELK export with a standardised filename based on the monitoring window's **start time**.
+The **Drive Backup** tab downloads the original ELK CSV exports with standardised filenames based on each report's monitoring window **start time**.
 
 ### Naming Format
 
@@ -131,12 +154,12 @@ X1_M_20260513_06.csv   ← 1xxx MNO
 X1_I_20260513_06.csv   ← 1xxx IPTSP
 ```
 
-### Drive Folders
-
-| Report | Folder |
-|---|---|
-| 1xxx (MNO & IPTSP) | `Report > X1_Report` |
-| 9xxx (MNO & IPTSP) | `Report > X9_Report` |
+**Drive folder structure:**
+```
+Report/
+├── X1_Report/   ← 1xxx MNO & IPTSP
+└── X9_Report/   ← 9xxx MNO & IPTSP
+```
 
 ---
 
@@ -169,7 +192,7 @@ X1_I_20260513_06.csv   ← 1xxx IPTSP
 | [IBM Plex Sans / Mono](https://fonts.google.com/specimen/IBM+Plex+Sans) | Google Fonts | UI typography |
 | [html2canvas](https://html2canvas.hertzen.com/) | 1.4.1 | Pivot table image export |
 
-Both are loaded from CDN. The tool requires an internet connection only to load these two resources on first open; after that it works offline.
+Both are loaded from CDN. The tool requires an internet connection only to load these two resources on first open.
 
 ---
 
