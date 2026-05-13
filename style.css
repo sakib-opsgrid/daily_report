@@ -278,8 +278,8 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.6; }
 .ss-footer {
   margin-top: 10px;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 4px;
   font-family: 'Courier New', monospace;
   font-size: 11px;
   color: #555;
