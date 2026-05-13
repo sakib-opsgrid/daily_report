@@ -251,7 +251,7 @@ function buildScreenshot(prefix){
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
       <button class="btn-copy-img" onclick="copyReportText('${typeLabel}','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
-      <button class="btn-copy-img" onclick="downloadRenamedCSV(data9[which+'_file'], buildFileName('X9',which==='mno'?'M':'I',document.getElementById('9xxx-from-date').value,document.getElementById('9xxx-from-time').value))">⬇ Download CSV</button>
+      <button class="btn-copy-img" onclick="downloadReport9('${which}')">⬇ Download CSV</button>
     </div>`;
 
   ssEl.classList.add('show');
@@ -449,7 +449,7 @@ function buildScreenshot1(prefix){
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
       <button class="btn-copy-img" onclick="copyReportText('${typeLabel}','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
-      <button class="btn-copy-img" onclick="downloadRenamedCSV(data1[which+'_file'], buildFileName('X1',which==='mno'?'M':'I',document.getElementById('1xxx-from-date').value,document.getElementById('1xxx-from-time').value))">⬇ Download CSV</button>
+      <button class="btn-copy-img" onclick="downloadReport1('${which}')">⬇ Download CSV</button>
     </div>`;
   ssEl.classList.add('show');
   setTimeout(() => ssEl.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
@@ -783,6 +783,26 @@ function doCopy(id, btn){
   if(el) el.addEventListener('input', refreshHTTP);
 });
 // ── Renamed CSV Download ──
+function downloadReport9(which){
+  const file = data9[`${which}_file`];
+  if(!file){ alert('No file found'); return; }
+  const fromDate = document.getElementById('9xxx-from-date').value;
+  const fromTime = document.getElementById('9xxx-from-time').value;
+  const ansType = which === 'mno' ? 'M' : 'I';
+  const fileName = buildFileName('X9', ansType, fromDate, fromTime);
+  downloadRenamedCSV(file, fileName);
+}
+
+function downloadReport1(which){
+  const file = data1[`${which}_file`];
+  if(!file){ alert('No file found'); return; }
+  const fromDate = document.getElementById('1xxx-from-date').value;
+  const fromTime = document.getElementById('1xxx-from-time').value;
+  const ansType = which === 'mno' ? 'M' : 'I';
+  const fileName = buildFileName('X1', ansType, fromDate, fromTime);
+  downloadRenamedCSV(file, fileName);
+}
+
 function buildFileName(errorType, ansType, fromDate, fromTime){
   // errorType: 'X9' or 'X1', ansType: 'M' or 'I'
   // fromDate: '2026-01-31', fromTime: '00:00'
