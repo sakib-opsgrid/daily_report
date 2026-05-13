@@ -29,6 +29,7 @@ function switchTab(id, el){
   el.classList.add('active');
   if(id==='4xx5xx') refreshHTTP();
   if(id==='dlr') refreshDLR();
+  if(id==='savefiles') refreshSaveFiles();
 }
 
 // ── Sub tab ──
@@ -820,6 +821,52 @@ function downloadRenamedCSV(file, fileName){
   a.download = fileName;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ── Save Files Tab ──
+function refreshSaveFiles(){
+  const fromDate9 = document.getElementById('9xxx-from-date').value;
+  const fromTime9 = document.getElementById('9xxx-from-time').value;
+  const fromDate1 = document.getElementById('1xxx-from-date').value;
+  const fromTime1 = document.getElementById('1xxx-from-time').value;
+
+  const files = [
+    { key: 'X9_M', file: data9['mno_file'],   name: buildFileName('X9','M', fromDate9, fromTime9), label: '9xxx MNO' },
+    { key: 'X9_I', file: data9['iptsp_file'],  name: buildFileName('X9','I', fromDate9, fromTime9), label: '9xxx IPTSP' },
+    { key: 'X1_M', file: data1['mno_file'],    name: buildFileName('X1','M', fromDate1, fromTime1), label: '1xxx MNO' },
+    { key: 'X1_I', file: data1['iptsp_file'],  name: buildFileName('X1','I', fromDate1, fromTime1), label: '1xxx IPTSP' },
+  ];
+
+  const list = document.getElementById('save-file-list');
+  list.innerHTML = files.map(f => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+      <div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--text);">${f.name}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">${f.label} · ${f.file ? '<span style="color:var(--accent);">Ready</span>' : '<span style="color:var(--text3);">No file uploaded</span>'}</div>
+      </div>
+      ${f.file ? `<button class="btn-copy-img" onclick="downloadRenamedCSV(${f.key.includes('9')?'data9':'data1'}['${f.key.includes('M')?'mno':'iptsp'}_file'], '${f.name}')">⬇</button>` : ''}
+    </div>`).join('');
+}
+
+function downloadAllFiles(){
+  const fromDate9 = document.getElementById('9xxx-from-date').value;
+  const fromTime9 = document.getElementById('9xxx-from-time').value;
+  const fromDate1 = document.getElementById('1xxx-from-date').value;
+  const fromTime1 = document.getElementById('1xxx-from-time').value;
+
+  const files = [
+    { file: data9['mno_file'],  name: buildFileName('X9','M', fromDate9, fromTime9) },
+    { file: data9['iptsp_file'],name: buildFileName('X9','I', fromDate9, fromTime9) },
+    { file: data1['mno_file'],  name: buildFileName('X1','M', fromDate1, fromTime1) },
+    { file: data1['iptsp_file'],name: buildFileName('X1','I', fromDate1, fromTime1) },
+  ];
+
+  const available = files.filter(f => f.file);
+  if(available.length === 0){ alert('No files uploaded yet.'); return; }
+
+  available.forEach((f, i) => {
+    setTimeout(() => downloadRenamedCSV(f.file, f.name), i * 400);
+  });
 }
 
 // ── Copy report caption text ──

@@ -22,6 +22,7 @@
   <button class="tab-btn" onclick="switchTab('1xxx',this)">1xxx Report</button>
   <button class="tab-btn" onclick="switchTab('4xx5xx',this)">4xx/5xx Report</button>
   <button class="tab-btn" onclick="switchTab('dlr',this)">DLR Report</button>
+  <button class="tab-btn" onclick="switchTab('savefiles',this)">Drive Backup</button>
 </div>
 
 <!-- ═══════════════ 9XXX ═══════════════ -->
@@ -442,6 +443,38 @@
     </div>
 
     <div class="screenshot-card" id="ss-dlr"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ SAVE FILES ═══════════════ -->
+<div class="tab-panel" id="panel-savefiles">
+  <div class="content">
+    <div class="section-head">
+      <h2>Drive Backup</h2>
+      <span class="badge">Drive Backup</span>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Download All CSVs</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:1rem;line-height:1.7;">
+        Downloads all four uploaded CSV files with standardised names based on each report's monitoring window start time. Upload each file to the corresponding folder in Google Drive.
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:10px;" id="save-file-list">
+        <!-- populated by JS -->
+      </div>
+
+      <div class="btn-row" style="margin-top:1.25rem;">
+        <button class="btn btn-primary" onclick="downloadAllFiles()">⬇ Download All (4 files)</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0;">
+      <div class="card-label">Drive Folder</div>
+      <div style="margin-top:4px;">
+        <a href="https://drive.google.com/drive/u/0/folders/1UmbAbuKVIX_aU7-h-GrQDQIabaByHR8H" target="_blank" class="btn-copy-img" style="text-decoration:none;display:inline-block;">Open Drive Folder ↗</a>
+      </div>
+    </div>
   </div>
 </div>
 
