@@ -252,7 +252,6 @@ function buildScreenshot(prefix){
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
       <button class="btn-copy-img" onclick="copyReportText('${typeLabel}','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
-      <button class="btn-copy-img" onclick="downloadReport9('${which}')">⬇ Download CSV</button>
     </div>`;
 
   ssEl.classList.add('show');
@@ -450,7 +449,6 @@ function buildScreenshot1(prefix){
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
       <button class="btn-copy-img" onclick="copyReportText('${typeLabel}','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
-      <button class="btn-copy-img" onclick="downloadReport1('${which}')">⬇ Download CSV</button>
     </div>`;
   ssEl.classList.add('show');
   setTimeout(() => ssEl.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
