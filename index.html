@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Service Assurance — Shift Report Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-dot"></div>
+    <span class="topbar-title">Infozillion Teletech · <span>Service Assurance</span></span>
+  </div>
+  <span class="topbar-time" id="clock"></span>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('9xxx',this)">9xxx Report</button>
+  <button class="tab-btn" onclick="switchTab('1xxx',this)">1xxx Report</button>
+  <button class="tab-btn" onclick="switchTab('4xx5xx',this)">4xx/5xx Report</button>
+  <button class="tab-btn" onclick="switchTab('dlr',this)">DLR Report</button>
+</div>
+
+<!-- ═══════════════ 9XXX ═══════════════ -->
+<div class="tab-panel active" id="panel-9xxx">
+  <div class="content">
+    <div class="section-head">
+      <h2>9xxx Error Report</h2>
+      <span class="badge">a2pResponseCode</span>
+    </div>
+
+    <!-- Monitoring window -->
+    <div class="card">
+      <div class="card-label">Monitoring Window</div>
+      <div class="field-grid">
+        <div class="field-block">
+          <label>From</label>
+          <div class="dt-wrap">
+            <input type="date" id="9xxx-from-date">
+            <input type="time" id="9xxx-from-time">
+          </div>
+        </div>
+        <div class="field-block">
+          <label>To</label>
+          <div class="dt-wrap">
+            <input type="date" id="9xxx-to-date">
+            <input type="time" id="9xxx-to-time">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload -->
+    <div class="card">
+      <div class="card-label">CSV Upload</div>
+      <div class="upload-cols">
+        <div>
+          <div class="info-row"><span class="info-pill">MNO</span></div>
+          <div class="upload-zone" id="zone-9mno">
+            <input type="file" accept=".csv" onchange="parse9xxx(this.files[0],'mno')">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">Drop <strong>MNO CSV</strong> or click</div>
+            <div class="upload-status" id="status-9mno"></div>
+          </div>
+        </div>
+        <div>
+          <div class="info-row"><span class="info-pill">IPTSP</span></div>
+          <div class="upload-zone" id="zone-9iptsp">
+            <input type="file" accept=".csv" onchange="parse9xxx(this.files[0],'iptsp')">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">Drop <strong>IPTSP CSV</strong> or click</div>
+            <div class="upload-status" id="status-9iptsp"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub tabs MNO / IPTSP -->
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="show9sub('mno',this)">MNO Table</button>
+      <button class="sub-tab" onclick="show9sub('iptsp',this)">IPTSP Table</button>
+    </div>
+
+    <div id="9sub-mno">
+      <div class="card-label" style="margin-bottom:.5rem;">MNO — clientId × a2pResponseCode</div>
+      <div class="pivot-wrap" id="pivot-9mno"><div class="no-data">Upload MNO CSV to generate pivot table</div></div>
+
+      <!-- Prepared by / Status / Screenshot -->
+      <div class="card" style="margin-top:1rem;">
+        <div class="card-label">Report Info — MNO</div>
+        <div class="field-grid">
+          <div class="field-block">
+            <label>Prepared By</label>
+            <input type="text" id="9mno-reporter" placeholder="Name" value="Rizvi">
+          </div>
+          <div class="field-block">
+            <label>Status</label>
+            <div class="status-row">
+              <button class="st-btn normal-on" id="9mno-btn-n" onclick="setSt('9mno','Normal')">Normal</button>
+              <button class="st-btn" id="9mno-btn-i" onclick="setSt('9mno','Issue')">Issue</button>
+            </div>
+          </div>
+        </div>
+        <div id="9mno-issue-box" style="margin-top:8px;display:none;">
+          <textarea id="9mno-issue" placeholder="Issue details…"></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="buildScreenshot('9mno')">Generate Screenshot View</button>
+        <button class="btn btn-secondary" onclick="copyText9('mno')">Copy Text</button>
+      </div>
+
+      <div class="screenshot-card" id="ss-9mno">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <div id="9sub-iptsp" style="display:none;">
+      <div class="card-label" style="margin-bottom:.5rem;">IPTSP — clientId × a2pResponseCode</div>
+      <div class="pivot-wrap" id="pivot-9iptsp"><div class="no-data">Upload IPTSP CSV to generate pivot table</div></div>
+
+      <div class="card" style="margin-top:1rem;">
+        <div class="card-label">Report Info — IPTSP</div>
+        <div class="field-grid">
+          <div class="field-block">
+            <label>Prepared By</label>
+            <input type="text" id="9iptsp-reporter" placeholder="Name" value="Rizvi">
+          </div>
+          <div class="field-block">
+            <label>Status</label>
+            <div class="status-row">
+              <button class="st-btn normal-on" id="9iptsp-btn-n" onclick="setSt('9iptsp','Normal')">Normal</button>
+              <button class="st-btn" id="9iptsp-btn-i" onclick="setSt('9iptsp','Issue')">Issue</button>
+            </div>
+          </div>
+        </div>
+        <div id="9iptsp-issue-box" style="margin-top:8px;display:none;">
+          <textarea id="9iptsp-issue" placeholder="Issue details…"></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="buildScreenshot('9iptsp')">Generate Screenshot View</button>
+        <button class="btn btn-secondary" onclick="copyText9('iptsp')">Copy Text</button>
+      </div>
+
+      <div class="screenshot-card" id="ss-9iptsp"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ 1XXX ═══════════════ -->
+<div class="tab-panel" id="panel-1xxx">
+  <div class="content">
+    <div class="section-head">
+      <h2>1xxx Error Report</h2>
+      <span class="badge">ansResponseCode</span>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Monitoring Window</div>
+      <div class="field-grid">
+        <div class="field-block">
+          <label>From</label>
+          <div class="dt-wrap">
+            <input type="date" id="1xxx-from-date">
+            <input type="time" id="1xxx-from-time">
+          </div>
+        </div>
+        <div class="field-block">
+          <label>To</label>
+          <div class="dt-wrap">
+            <input type="date" id="1xxx-to-date">
+            <input type="time" id="1xxx-to-time">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">CSV Upload</div>
+      <div class="upload-cols">
+        <div>
+          <div class="info-row"><span class="info-pill">MNO</span></div>
+          <div class="upload-zone" id="zone-1mno">
+            <input type="file" accept=".csv" onchange="parse1xxx(this.files[0],'mno')">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">Drop <strong>MNO CSV</strong> or click</div>
+            <div class="upload-status" id="status-1mno"></div>
+          </div>
+        </div>
+        <div>
+          <div class="info-row"><span class="info-pill">IPTSP</span></div>
+          <div class="upload-zone" id="zone-1iptsp">
+            <input type="file" accept=".csv" onchange="parse1xxx(this.files[0],'iptsp')">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">Drop <strong>IPTSP CSV</strong> or click</div>
+            <div class="upload-status" id="status-1iptsp"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="show1sub('mno',this)">MNO Table</button>
+      <button class="sub-tab" onclick="show1sub('iptsp',this)">IPTSP Table</button>
+    </div>
+
+    <div id="1sub-mno">
+      <div class="card-label" style="margin-bottom:.5rem;">MNO — clientId × Gateway × ansResponseCode</div>
+      <div class="pivot-wrap" id="pivot-1mno"><div class="no-data">Upload MNO CSV to generate pivot table</div></div>
+      <div class="card" style="margin-top:1rem;">
+        <div class="card-label">Report Info — MNO</div>
+        <div class="field-grid">
+          <div class="field-block">
+            <label>Prepared By</label>
+            <input type="text" id="1mno-reporter" placeholder="Name" value="Rizvi">
+          </div>
+          <div class="field-block">
+            <label>Status</label>
+            <div class="status-row">
+              <button class="st-btn normal-on" id="1mno-btn-n" onclick="setSt('1mno','Normal')">Normal</button>
+              <button class="st-btn" id="1mno-btn-i" onclick="setSt('1mno','Issue')">Issue</button>
+            </div>
+          </div>
+        </div>
+        <div id="1mno-issue-box" style="margin-top:8px;display:none;">
+          <textarea id="1mno-issue" placeholder="Issue details…"></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="buildScreenshot1('1mno')">Generate Screenshot View</button>
+        <button class="btn btn-secondary" onclick="copyText1('mno')">Copy Text</button>
+      </div>
+      <div class="screenshot-card" id="ss-1mno"></div>
+    </div>
+
+    <div id="1sub-iptsp" style="display:none;">
+      <div class="card-label" style="margin-bottom:.5rem;">IPTSP — clientId × Gateway × ansResponseCode</div>
+      <div class="pivot-wrap" id="pivot-1iptsp"><div class="no-data">Upload IPTSP CSV to generate pivot table</div></div>
+      <div class="card" style="margin-top:1rem;">
+        <div class="card-label">Report Info — IPTSP</div>
+        <div class="field-grid">
+          <div class="field-block">
+            <label>Prepared By</label>
+            <input type="text" id="1iptsp-reporter" placeholder="Name" value="Rizvi">
+          </div>
+          <div class="field-block">
+            <label>Status</label>
+            <div class="status-row">
+              <button class="st-btn normal-on" id="1iptsp-btn-n" onclick="setSt('1iptsp','Normal')">Normal</button>
+              <button class="st-btn" id="1iptsp-btn-i" onclick="setSt('1iptsp','Issue')">Issue</button>
+            </div>
+          </div>
+        </div>
+        <div id="1iptsp-issue-box" style="margin-top:8px;display:none;">
+          <textarea id="1iptsp-issue" placeholder="Issue details…"></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="buildScreenshot1('1iptsp')">Generate Screenshot View</button>
+        <button class="btn btn-secondary" onclick="copyText1('iptsp')">Copy Text</button>
+      </div>
+      <div class="screenshot-card" id="ss-1iptsp"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ 4XX/5XX ═══════════════ -->
+<div class="tab-panel" id="panel-4xx5xx">
+  <div class="content">
+    <div class="section-head">
+      <h2>4xx / 5xx HTTP Report</h2>
+      <span class="badge">Source Hits</span>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Monitoring Window</div>
+      <div class="field-grid">
+        <div class="field-block">
+          <label>From</label>
+          <div class="dt-wrap">
+            <input type="date" id="http-from-date">
+            <input type="time" id="http-from-time">
+          </div>
+        </div>
+        <div class="field-block">
+          <label>To</label>
+          <div class="dt-wrap">
+            <input type="date" id="http-to-date">
+            <input type="time" id="http-to-time">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Source Breakdown (GP → ICC)</div>
+      <div id="http-source-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Report Info</div>
+      <div class="field-grid">
+        <div class="field-block">
+          <label>Prepared By</label>
+          <input type="text" id="http-reporter" placeholder="Name" value="Rizvi">
+        </div>
+        <div class="field-block">
+          <label>Status</label>
+          <div class="status-row">
+            <button class="st-btn normal-on" id="http-btn-n" onclick="setSt('http','Normal')">Normal</button>
+            <button class="st-btn" id="http-btn-i" onclick="setSt('http','Issue')">Issue</button>
+          </div>
+        </div>
+      </div>
+      <div id="http-issue-box" style="margin-top:8px;display:none;">
+        <textarea id="http-issue" placeholder="Issue details…"></textarea>
+      </div>
+    </div>
+
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="httpView('preview',this)">Preview</button>
+      <button class="sub-tab" onclick="httpView('copy',this)">Copy Text</button>
+    </div>
+
+    <div id="http-preview">
+      <div class="wa-wrap">
+        <div class="wa-bubble">
+          <div class="wa-inner" id="http-wa-content"></div>
+          <div class="wa-time-row" id="http-wa-time"></div>
+        </div>
+      </div>
+    </div>
+    <div id="http-copy" style="display:none;">
+      <div class="copy-pre" id="http-copy-text"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="doCopy('http-copy-text', this)">Copy to Clipboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ DLR ═══════════════ -->
+<div class="tab-panel" id="panel-dlr">
+  <div class="content">
+    <div class="section-head">
+      <h2>DLR Report</h2>
+      <span class="badge">statusCode 1000/1020/1052</span>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Monitoring Window</div>
+      <div class="field-grid">
+        <div class="field-block">
+          <label>From</label>
+          <div class="dt-wrap">
+            <input type="date" id="dlr-from-date">
+            <input type="time" id="dlr-from-time">
+          </div>
+        </div>
+        <div class="field-block">
+          <label>To</label>
+          <div class="dt-wrap">
+            <input type="date" id="dlr-to-date">
+            <input type="time" id="dlr-to-time">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">CSV Upload</div>
+      <div class="upload-zone" id="zone-dlr">
+        <input type="file" accept=".csv" onchange="parseDLR(this.files[0])">
+        <div class="upload-icon">📂</div>
+        <div class="upload-text">Drop <strong>DLR CSV</strong> or click — requires <code style="color:var(--accent)">message_body</code> column</div>
+        <div class="upload-status" id="status-dlr"></div>
+      </div>
+      <div class="dlr-grid" style="margin-top:1rem;" id="dlr-counts-box">
+        <div class="dlr-val-box">
+          <div class="dlr-code">statusCode=1000</div>
+          <div class="dlr-count" id="dlr-1000">0</div>
+          <div class="dlr-label">Delivered</div>
+        </div>
+        <div class="dlr-val-box">
+          <div class="dlr-code">statusCode=1020</div>
+          <div class="dlr-count" id="dlr-1020">0</div>
+          <div class="dlr-label">Undelivered</div>
+        </div>
+        <div class="dlr-val-box">
+          <div class="dlr-code">statusCode=1052</div>
+          <div class="dlr-count" id="dlr-1052">0</div>
+          <div class="dlr-label">Expired</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="card-label">Manual Override (if needed)</div>
+        <div class="field-grid-3" style="margin-top:6px;">
+          <div class="field-block">
+            <label>1000 count</label>
+            <input type="number" id="dlr-m-1000" placeholder="0" oninput="updateDLRManual()">
+          </div>
+          <div class="field-block">
+            <label>1020 count</label>
+            <input type="number" id="dlr-m-1020" placeholder="0" oninput="updateDLRManual()">
+          </div>
+          <div class="field-block">
+            <label>1052 count</label>
+            <input type="number" id="dlr-m-1052" placeholder="0" oninput="updateDLRManual()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Report Info</div>
+      <div class="field-grid">
+        <div class="field-block">
+          <label>Prepared By</label>
+          <input type="text" id="dlr-reporter" placeholder="Name" value="Rizvi">
+        </div>
+        <div class="field-block">
+          <label>Status</label>
+          <div class="status-row">
+            <button class="st-btn normal-on" id="dlr-btn-n" onclick="setSt('dlr','Normal')">Normal</button>
+            <button class="st-btn" id="dlr-btn-i" onclick="setSt('dlr','Issue')">Issue</button>
+          </div>
+        </div>
+      </div>
+      <div id="dlr-issue-box" style="margin-top:8px;display:none;">
+        <textarea id="dlr-issue" placeholder="Issue details…"></textarea>
+      </div>
+    </div>
+
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="dlrView('preview',this)">Preview</button>
+      <button class="sub-tab" onclick="dlrView('copy',this)">Copy Text</button>
+    </div>
+    <div id="dlr-preview">
+      <div class="wa-wrap">
+        <div class="wa-bubble">
+          <div class="wa-inner" id="dlr-wa-content"></div>
+          <div class="wa-time-row" id="dlr-wa-time"></div>
+        </div>
+      </div>
+    </div>
+    <div id="dlr-copy" style="display:none;">
+      <div class="copy-pre" id="dlr-copy-text"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="doCopy('dlr-copy-text', this)">Copy to Clipboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer"><span>© 2026 Najmaz Sakib · Infozillion Teletech Bd Ltd</span></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
