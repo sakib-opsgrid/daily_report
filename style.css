@@ -121,6 +121,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 /* FIELDS */
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .field-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.field-stack { display: flex; flex-direction: column; gap: 10px; }
 .field-block { display: flex; flex-direction: column; gap: 5px; }
 .field-block label { font-size: 11px; color: var(--text2); letter-spacing: .03em; }
 input[type=text], input[type=number], input[type=date], input[type=time], textarea, select {
