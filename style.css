@@ -235,7 +235,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.6; }
 .screenshot-card {
   background: #fff;
   border-radius: 10px;
-  padding: 16px;
+  padding: 0;
   margin-top: 1rem;
   display: none;
   overflow-x: auto;
@@ -244,6 +244,8 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.6; }
 .ss-inner {
   display: inline-block;
   min-width: max-content;
+  padding: 16px;
+  background: #fff;
 }
 .ss-header {
   display: flex;
@@ -284,6 +286,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.6; }
   font-family: 'Courier New', monospace;
   font-size: 11px;
   color: #555;
+  padding: 0 16px;
 }
 .ss-footer strong { color: #111; }
 .ss-status-normal { color: #2a7d2a; font-weight: 600; }
@@ -292,6 +295,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.6; }
   display: flex;
   gap: 8px;
   margin-top: 10px;
+  padding: 0 16px 16px;
 }
 .btn-copy-img {
   font-family: var(--mono);
