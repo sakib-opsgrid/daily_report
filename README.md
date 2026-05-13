@@ -51,7 +51,14 @@ Tracks delivery report status code counts.
 
 - Upload ELK Discover CSV or enter counts manually
 - Required column: `message_body` (must contain `statusCode=1000`, `statusCode=1020`, or `statusCode=1052`)
-- Output: live WhatsApp preview + plain text copy
+- Generates a table with status code, error description, and count
+- Output: screenshot-ready white table + image copy to clipboard + text copy
+
+| Status Code | Error Description |
+|---|---|
+| 1000 | Success |
+| 1020 | Internal Server Error |
+| 1052 | Submission record not found |
 
 ---
 
@@ -90,10 +97,46 @@ Tracks delivery report status code counts.
 4. Upload the relevant ELK CSV export(s)
 5. Review the generated pivot table
 6. Set **Prepared By** and **Status** (Normal / Issue)
-7. Click **Generate Screenshot View** → **Copy as Image**
-8. Paste directly into the WhatsApp shift group
+7. Click **Generate Screenshot View**
+8. Click **📋 Copy as Image** → paste into WhatsApp
+9. Click **📄 Copy Text** → paste as the caption message
+10. Click **⬇ Download CSV** → upload the renamed file to the appropriate Drive folder
 
-For HTTP and DLR reports, use **Copy to Clipboard** and paste as text.
+For HTTP reports, use **Copy to Clipboard** and paste as text.
+
+---
+
+## CSV Backup — Google Drive
+
+After generating a report, the **⬇ Download CSV** button saves the original ELK export with a standardised filename based on the monitoring window's **start time**.
+
+### Naming Format
+
+```
+ErrorType_AnsType_Date_StartHour.csv
+```
+
+| Token | Description | Example |
+|---|---|---|
+| `ErrorType` | `X9` for 9xxx, `X1` for 1xxx | `X9` |
+| `AnsType` | `M` for MNO, `I` for IPTSP | `M` |
+| `Date` | From date in YYYYMMDD | `20260513` |
+| `StartHour` | From time hour (HH) | `06` |
+
+**Examples:**
+```
+X9_M_20260513_06.csv   ← 9xxx MNO, May 13 2026, starting 06:00
+X9_I_20260513_06.csv   ← 9xxx IPTSP
+X1_M_20260513_06.csv   ← 1xxx MNO
+X1_I_20260513_06.csv   ← 1xxx IPTSP
+```
+
+### Drive Folders
+
+| Report | Folder |
+|---|---|
+| 1xxx (MNO & IPTSP) | `Report > X1_Report` |
+| 9xxx (MNO & IPTSP) | `Report > X9_Report` |
 
 ---
 

@@ -89,10 +89,11 @@ function splitCSVLine(line, delim){
 }
 
 // ── 9xxx Data store ──
-const data9 = { mno: null, iptsp: null };
+const data9 = { mno: null, iptsp: null, mno_file: null, iptsp_file: null };
 
 function parse9xxx(file, which){
   if(!file) return;
+  data9[`${which}_file`] = file; // store raw file
   const reader = new FileReader();
   reader.onload = e => {
     const rows = parseCSV(e.target.result);
@@ -250,6 +251,7 @@ function buildScreenshot(prefix){
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
       <button class="btn-copy-img" onclick="copyReportText('${typeLabel}','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
+      <button class="btn-copy-img" onclick="downloadRenamedCSV(data9[which+'_file'], buildFileName('X9',which==='mno'?'M':'I',document.getElementById('9xxx-from-date').value,document.getElementById('9xxx-from-time').value))">⬇ Download CSV</button>
     </div>`;
 
   ssEl.classList.add('show');
@@ -257,10 +259,11 @@ function buildScreenshot(prefix){
 }
 
 // ── 1xxx Data store ──
-const data1 = { mno: null, iptsp: null };
+const data1 = { mno: null, iptsp: null, mno_file: null, iptsp_file: null };
 
 function parse1xxx(file, which){
   if(!file) return;
+  data1[`${which}_file`] = file; // store raw file
   const reader = new FileReader();
   reader.onload = e => {
     const rows = parseCSV(e.target.result);
@@ -446,6 +449,7 @@ function buildScreenshot1(prefix){
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
       <button class="btn-copy-img" onclick="copyReportText('${typeLabel}','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
+      <button class="btn-copy-img" onclick="downloadRenamedCSV(data1[which+'_file'], buildFileName('X1',which==='mno'?'M':'I',document.getElementById('1xxx-from-date').value,document.getElementById('1xxx-from-time').value))">⬇ Download CSV</button>
     </div>`;
   ssEl.classList.add('show');
   setTimeout(() => ssEl.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
@@ -778,6 +782,26 @@ function doCopy(id, btn){
   const el = document.getElementById(id);
   if(el) el.addEventListener('input', refreshHTTP);
 });
+// ── Renamed CSV Download ──
+function buildFileName(errorType, ansType, fromDate, fromTime){
+  // errorType: 'X9' or 'X1', ansType: 'M' or 'I'
+  // fromDate: '2026-01-31', fromTime: '00:00'
+  if(!fromDate) return `${errorType}_${ansType}_unknown.csv`;
+  const d = fromDate.replace(/-/g,''); // 20260131
+  const h = (fromTime||'00:00').split(':')[0].padStart(2,'0'); // 00
+  return `${errorType}_${ansType}_${d}_${h}.csv`;
+}
+
+function downloadRenamedCSV(file, fileName){
+  if(!file) return;
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // ── Copy report caption text ──
 function copyReportText(typeLabel, period, reporter, statusStr, btn) {
   const text = `${typeLabel},\n${period}\n\nReporter: ${reporter}\nStatus  : ${statusStr}`;
