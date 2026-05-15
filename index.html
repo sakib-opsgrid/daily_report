@@ -14,7 +14,10 @@
     <div class="logo-dot"></div>
     <span class="topbar-title">Infozillion Teletech Bd Ltd · <span>Service Assurance</span></span>
   </div>
-  <span class="topbar-time" id="clock"></span>
+  <div class="topbar-right">
+    <span class="topbar-time" id="clock"></span>
+    <button class="reset-btn" onclick="resetAll(this)">Reset</button>
+  </div>
 </div>
 
 <div class="tab-nav">
@@ -301,7 +304,7 @@
 
     <div class="card">
       <div class="card-label">Source Breakdown (GP → ICC)</div>
-      <div id="http-source-list"></div>
+      <div class="src-grid" id="http-source-list"></div>
     </div>
 
     <div class="card">
@@ -324,24 +327,28 @@
       </div>
     </div>
 
-    <div class="sub-tabs">
-      <button class="sub-tab active" onclick="httpView('preview',this)">Preview</button>
-      <button class="sub-tab" onclick="httpView('copy',this)">Copy Text</button>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generateHTTP()">Generate for WhatsApp</button>
     </div>
 
-    <div id="http-preview">
-      <div class="wa-wrap">
-        <div class="wa-bubble">
-          <div class="wa-inner" id="http-wa-content"></div>
-          <div class="wa-time-row" id="http-wa-time"></div>
+    <div id="http-output" style="display:none; margin-top:1rem;">
+      <div class="screenshot-card show">
+        <div class="ss-inner" id="http-ss-inner">
+          <div class="ss-header">
+            <div class="ss-title">4xx / 5xx HTTP Report</div>
+            <div class="ss-meta" id="http-ss-period"></div>
+          </div>
+          <pre id="http-copy-text" style="font-family:'Courier New',monospace;font-size:12px;line-height:1.75;color:#1f2937;white-space:pre;"></pre>
+          <div class="ss-footer" style="margin-top:12px;">
+            <div id="http-ss-reporter"></div>
+            <div id="http-ss-status"></div>
+          </div>
+        </div>
+        <div class="ss-actions">
+          <button class="btn-copy-img" onclick="doCopy('http-full-text', this)">📄 Copy Text</button>
         </div>
       </div>
-    </div>
-    <div id="http-copy" style="display:none;">
-      <div class="copy-pre" id="http-copy-text"></div>
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="doCopy('http-copy-text', this)">Copy to Clipboard</button>
-      </div>
+      <pre id="http-full-text" style="display:none;"></pre>
     </div>
   </div>
 </div>

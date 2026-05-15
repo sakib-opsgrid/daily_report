@@ -53,9 +53,12 @@ Tracks SMS answer response errors in the 1xxx range.
 
 Tracks HTTP error hits across all source operators (GP → ICC).
 
-- Manual entry per source, broken down by HTTP code
+- Manual entry per source in a 2-column grid layout
+- Sources with data are automatically highlighted in blue
+- Each source expands independently to show code-level inputs
 - Codes tracked: `400 401 402 403 404 500 501 502 503 504`
-- Output: live WhatsApp preview + **Copy to Clipboard**
+- Click **Generate for WhatsApp** to produce a preview
+- Output: formatted preview → **📄 Copy Text** (WhatsApp-aligned with code block)
 
 ### 4. DLR Report
 
@@ -63,7 +66,7 @@ Tracks delivery report status code counts.
 
 - Upload ELK Discover CSV or enter counts manually
 - Required column: `message_body` (scans for any `statusCode=XXXX` pattern)
-- All status codes detected automatically — not limited to 1000, 1020, 1052
+- All status codes detected automatically — not limited to known codes
 - Output: screenshot-ready table → **📋 Copy as Image** + **📄 Copy Text**
 
 Known status codes:
@@ -125,7 +128,7 @@ Download all four uploaded CSV files with standardised names for Google Drive ba
 9. Click **📄 Copy Text** → paste as the caption message
 10. Go to **Drive Backup** tab → **⬇ Download All** → upload to Google Drive
 
-For HTTP reports, use **Copy to Clipboard** and paste as text.
+For HTTP reports: fill in source hits → **Generate for WhatsApp** → **📄 Copy Text**.
 
 ---
 
@@ -163,6 +166,12 @@ Report/
 
 ---
 
+## Reset
+
+The **Reset** button in the top-right corner clears all uploaded files, generated tables, form fields, and resets all monitoring windows to the current time. A confirmation prompt appears before any data is cleared.
+
+---
+
 ## Deploy on GitHub Pages
 
 1. Create a new GitHub repository (e.g. `shift-report`)
@@ -179,9 +188,9 @@ Report/
 ## Privacy & Data
 
 - All data is processed **locally in the browser**
-- No CSV data is uploaded to any external server
+- No CSV data is sent to any external server
 - No cookies or tracking of any kind
-- Closing the tab clears all data
+- Closing the tab or clicking Reset clears all data
 
 ---
 
@@ -192,7 +201,7 @@ Report/
 | [IBM Plex Sans / Mono](https://fonts.google.com/specimen/IBM+Plex+Sans) | Google Fonts | UI typography |
 | [html2canvas](https://html2canvas.hertzen.com/) | 1.4.1 | Pivot table image export |
 
-Both are loaded from CDN. The tool requires an internet connection only to load these two resources on first open.
+Both loaded from CDN. An internet connection is only needed to load these on first open.
 
 ---
 

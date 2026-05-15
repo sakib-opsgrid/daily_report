@@ -1,3 +1,80 @@
+// ── Reset All ──
+function resetAll(btn){
+  if(!confirm('Reset all data? This will clear all uploaded files, form fields, and generated reports.')) return;
+
+  // Clear 9xxx
+  data9.mno = null; data9.iptsp = null;
+  data9.mno_file = null; data9.iptsp_file = null;
+  data9.mno_pivot = null; data9.iptsp_pivot = null;
+  document.getElementById('status-9mno').textContent = '';
+  document.getElementById('status-9iptsp').textContent = '';
+  document.getElementById('zone-9mno').classList.remove('loaded');
+  document.getElementById('zone-9iptsp').classList.remove('loaded');
+  document.getElementById('pivot-9mno').innerHTML = '<div class="no-data">Upload MNO CSV to generate pivot table</div>';
+  document.getElementById('pivot-9iptsp').innerHTML = '<div class="no-data">Upload IPTSP CSV to generate pivot table</div>';
+  document.getElementById('ss-9mno').className = 'screenshot-card';
+  document.getElementById('ss-9iptsp').className = 'screenshot-card';
+
+  // Clear 1xxx
+  data1.mno = null; data1.iptsp = null;
+  data1.mno_file = null; data1.iptsp_file = null;
+  data1.mno_pivot = null; data1.iptsp_pivot = null;
+  document.getElementById('status-1mno').textContent = '';
+  document.getElementById('status-1iptsp').textContent = '';
+  document.getElementById('zone-1mno').classList.remove('loaded');
+  document.getElementById('zone-1iptsp').classList.remove('loaded');
+  document.getElementById('pivot-1mno').innerHTML = '<div class="no-data">Upload MNO CSV to generate pivot table</div>';
+  document.getElementById('pivot-1iptsp').innerHTML = '<div class="no-data">Upload IPTSP CSV to generate pivot table</div>';
+  document.getElementById('ss-1mno').className = 'screenshot-card';
+  document.getElementById('ss-1iptsp').className = 'screenshot-card';
+
+  // Clear DLR
+  dlrData = {};
+  document.getElementById('status-dlr').textContent = '';
+  document.getElementById('zone-dlr').classList.remove('loaded');
+  document.getElementById('dlr-counts-box').innerHTML = '';
+  document.getElementById('dlr-manual-box').innerHTML = '';
+  document.getElementById('ss-dlr').className = 'screenshot-card';
+
+  // Clear HTTP source inputs
+  HTTP_SOURCES.forEach(s => {
+    HTTP_CODES.forEach(c => {
+      const el = document.getElementById(`hc-${s}-${c}`);
+      if(el) el.value = '';
+    });
+    const block = document.getElementById(`src-${s}`);
+    if(block) block.classList.remove('has-data','open');
+    const totalEl = document.getElementById(`htotal-${s}`);
+    if(totalEl){ totalEl.textContent = '—'; totalEl.style.color = ''; }
+  });
+
+  // Reset all datetimes
+  ['9xxx','1xxx','http','dlr'].forEach(p => initDT(p));
+
+  // Reset all reporters and statuses
+  ['9mno','9iptsp','1mno','1iptsp','http','dlr'].forEach(p => {
+    const rep = document.getElementById(`${p}-reporter`);
+    if(rep) rep.value = 'Rizvi';
+    setSt(p, 'Normal');
+  });
+
+  // Reset file inputs
+  document.querySelectorAll('input[type=file]').forEach(f => { f.value = ''; });
+
+  // Refresh previews
+  refreshHTTP();
+  const httpOut = document.getElementById('http-output');
+  if(httpOut) httpOut.style.display = 'none';
+
+  // Reset Drive Backup list
+  const list = document.getElementById('save-file-list');
+  if(list) list.innerHTML = '';
+
+  const orig = btn.textContent;
+  btn.textContent = 'Done ✓';
+  setTimeout(() => { btn.textContent = orig; }, 2000);
+}
+
 // ── Clock ──
 function updateClock(){
   const n = new Date();
@@ -244,10 +321,10 @@ function buildScreenshot(prefix){
         </div>
       </div>
       ${tableHtml}
-    </div>
-    <div class="ss-footer">
-      <div><strong>Reporter:</strong> ${reporter}</div>
-      <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
+      <div class="ss-footer">
+        <div><strong>Reporter:</strong> ${reporter}</div>
+        <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
+      </div>
     </div>
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
@@ -441,10 +518,10 @@ function buildScreenshot1(prefix){
         </div>
       </div>
       ${tableHtml}
-    </div>
-    <div class="ss-footer">
-      <div><strong>Reporter:</strong> ${reporter}</div>
-      <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
+      <div class="ss-footer">
+        <div><strong>Reporter:</strong> ${reporter}</div>
+        <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
+      </div>
     </div>
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
@@ -471,8 +548,8 @@ function buildHTTPSources(){
     block.innerHTML = `
       <div class="src-header" onclick="toggleSrc('${s}')">
         <span class="src-name">${s}</span>
-        <span style="display:flex;align-items:center;gap:8px;">
-          <span class="src-total" id="htotal-${s}">0 hits</span>
+        <span style="display:flex;align-items:center;gap:4px;">
+          <span class="src-total" id="htotal-${s}">—</span>
           <span class="src-arrow">▼</span>
         </span>
       </div>
@@ -494,8 +571,16 @@ function getHVal(s,c){
 function updateHTTPTotal(s){
   const total = HTTP_CODES.reduce((sum,c)=>sum+getHVal(s,c),0);
   const el = document.getElementById(`htotal-${s}`);
-  el.textContent = total>0?`${total} hits`:'0 hits';
-  el.style.color = total>0?'var(--accent)':'var(--text3)';
+  const block = document.getElementById(`src-${s}`);
+  if(total > 0){
+    el.textContent = `${total} hits`;
+    el.style.color = 'var(--accent)';
+    block.classList.add('has-data');
+  } else {
+    el.textContent = '—';
+    el.style.color = '';
+    block.classList.remove('has-data');
+  }
 }
 
 function fmtDT(dateVal, timeVal){
@@ -530,23 +615,31 @@ function buildHTTPReport(){
   return { period, srcLines: lines.join('\n'), reporter, statusStr };
 }
 
+function generateHTTP(){
+  refreshHTTP();
+  const output = document.getElementById('http-output');
+  output.style.display = 'block';
+  setTimeout(() => output.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
+}
+
 function refreshHTTP(){
   const r = buildHTTPReport();
-  const waContent = `${r.period}\n\`\`\`\n${r.srcLines}\n\`\`\`\n*Reporter:* ${r.reporter}\n*Status  :* ${r.statusStr}`;
-  document.getElementById('http-wa-content').textContent = waContent;
-  document.getElementById('http-wa-time').textContent = fmtTimeNow();
-  const copyText = `${r.period}\n\`\`\`\n${r.srcLines}\n\`\`\`\nReporter: ${r.reporter}\nStatus  : ${r.statusStr}`;
-  document.getElementById('http-copy-text').textContent = copyText;
+  const periodEl = document.getElementById('http-ss-period');
+  const reporterEl = document.getElementById('http-ss-reporter');
+  const statusEl = document.getElementById('http-ss-status');
+  const srcEl = document.getElementById('http-copy-text');
+  const fullEl = document.getElementById('http-full-text');
+  if(periodEl) periodEl.textContent = r.period;
+  if(srcEl) srcEl.textContent = r.srcLines;
+  if(fullEl) fullEl.textContent = `${r.period}\n\`\`\`\n${r.srcLines}\n\`\`\`\nReporter: ${r.reporter}\nStatus  : ${r.statusStr}`;
+  if(reporterEl) reporterEl.innerHTML = `<strong>Reporter:</strong> ${r.reporter}`;
+  if(statusEl){
+    const cls = (statusMap['http']||'Normal')==='Normal' ? 'ss-status-normal' : 'ss-status-issue';
+    statusEl.innerHTML = `<strong>Status:</strong> <span class="${cls}">${r.statusStr}</span>`;
+  }
 }
 refreshHTTP();
 
-function httpView(which, el){
-  document.getElementById('http-preview').style.display = which==='preview'?'block':'none';
-  document.getElementById('http-copy').style.display = which==='copy'?'block':'none';
-  el.closest('.sub-tabs').querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  refreshHTTP();
-}
 
 // ── DLR ──
 const DLR_KNOWN = {
@@ -669,10 +762,10 @@ function buildDLRScreenshot(){
         </div>
       </div>
       ${tableHtml}
-    </div>
-    <div class="ss-footer">
-      <div><strong>Reporter:</strong> ${reporter}</div>
-      <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
+      <div class="ss-footer">
+        <div><strong>Reporter:</strong> ${reporter}</div>
+        <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
+      </div>
     </div>
     <div class="ss-actions">
       <button class="btn-copy-img" onclick="copyAsImage('ss-inner-dlr', this)">📋 Copy as Image</button>
@@ -779,7 +872,11 @@ function doCopy(id, btn){
 // ── Auto-refresh HTTP preview on field changes ──
 ['http-from-date','http-from-time','http-to-date','http-to-time','http-reporter','http-issue'].forEach(id=>{
   const el = document.getElementById(id);
-  if(el) el.addEventListener('input', refreshHTTP);
+  if(el) el.addEventListener('input', () => {
+    // Only refresh if output already visible
+    const output = document.getElementById('http-output');
+    if(output && output.style.display !== 'none') refreshHTTP();
+  });
 });
 // ── Renamed CSV Download ──
 function downloadReport9(which){
