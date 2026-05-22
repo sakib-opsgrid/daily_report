@@ -100,7 +100,9 @@ function initDT(prefix, offsetHrs=0){
   document.getElementById(`${prefix}-to-date`).value = toD(n);
   document.getElementById(`${prefix}-to-time`).value = toT(n);
 }
-['9xxx','1xxx','http','dlr'].forEach(p => initDT(p));
+document.addEventListener('DOMContentLoaded', () => {
+  ['9xxx','1xxx','http','dlr'].forEach(p => initDT(p));
+});
 
 // ── Tab switching ──
 function switchTab(id, el){
@@ -109,7 +111,6 @@ function switchTab(id, el){
   document.getElementById('panel-'+id).classList.add('active');
   el.classList.add('active');
   if(id==='4xx5xx') refreshHTTP();
-  if(id==='dlr') refreshDLR();
   if(id==='savefiles') refreshSaveFiles();
 }
 
@@ -561,7 +562,7 @@ function buildHTTPSources(){
     sl.appendChild(block);
   });
 }
-buildHTTPSources();
+document.addEventListener('DOMContentLoaded', () => { buildHTTPSources(); });
 
 function toggleSrc(s){
   document.getElementById(`src-${s}`).classList.toggle('open');
@@ -636,6 +637,7 @@ function parseHTTPcsv(file){
 }
 
 
+function toggleSrc(s){
   document.getElementById(`src-${s}`).classList.toggle('open');
 }
 
