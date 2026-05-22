@@ -563,6 +563,10 @@ function buildHTTPSources(){
 }
 buildHTTPSources();
 
+function toggleSrc(s){
+  document.getElementById(`src-${s}`).classList.toggle('open');
+}
+
 // ── HTTP CSV Parse ──
 const HTTP_SOURCE_MAP = {
   'GP': 'gp', 'RB': 'rb', 'BL': 'bl', 'TT': 'tt', 'ADN': 'adn',
