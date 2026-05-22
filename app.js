@@ -562,7 +562,7 @@ function buildHTTPSources(){
     sl.appendChild(block);
   });
 }
-document.addEventListener('DOMContentLoaded', () => { buildHTTPSources(); });
+buildHTTPSources();
 
 function toggleSrc(s){
   document.getElementById(`src-${s}`).classList.toggle('open');
@@ -578,9 +578,10 @@ const HTTP_SOURCE_MAP = {
 };
 
 function matchSource(ansType){
-  // Find which source this ans_type belongs to
-  const val = (ansType||'').toLowerCase();
-  for(const [src] of Object.entries(HTTP_SOURCE_MAP)){
+  const val = (ansType||'').toLowerCase().replace(/[-_\/]/g, '');
+  // Sort by length descending to match longest first (e.g. MTN before MN, WBL before BL)
+  const sorted = HTTP_SOURCES.slice().sort((a,b) => b.length - a.length);
+  for(const src of sorted){
     if(val.includes(src.toLowerCase())) return src;
   }
   return null;
