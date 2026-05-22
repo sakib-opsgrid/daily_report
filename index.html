@@ -303,6 +303,16 @@
     </div>
 
     <div class="card">
+      <div class="card-label">CSV Upload (Optional)</div>
+      <div class="upload-zone" id="zone-http">
+        <input type="file" accept=".csv" onchange="parseHTTPcsv(this.files[0])">
+        <div class="upload-icon">📂</div>
+        <div class="upload-text">Drop <strong>HTTP CSV</strong> or click — requires <code style="color:var(--accent)">ans_type</code> and <code style="color:var(--accent)">event.original</code> columns</div>
+        <div class="upload-status" id="status-http"></div>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-label">Source Breakdown (GP → ICC)</div>
       <div class="src-grid" id="http-source-list"></div>
     </div>

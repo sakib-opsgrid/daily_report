@@ -53,12 +53,13 @@ Tracks SMS answer response errors in the 1xxx range.
 
 Tracks HTTP error hits across all source operators (GP → ICC).
 
-- Manual entry per source in a 2-column grid layout
-- Sources with data are automatically highlighted in blue
-- Each source expands independently to show code-level inputs
-- Codes tracked: `400 401 402 403 404 500 501 502 503 504`
-- Click **Generate for WhatsApp** to produce a preview
-- Output: formatted preview → **📄 Copy Text** (WhatsApp-aligned with code block)
+- **Optional CSV upload**: upload ELK export → source hits auto-filled
+- Required columns: `ans_type`, `event.original`
+- `ans_type` matched to source by name (e.g. `bl`, `bl-proxy` → BL; `rb-proxy` → RB)
+- HTTP code extracted from `event.original` nginx log line
+- Manual entry also available — sources expand independently
+- Sources with data highlighted in blue automatically
+- Click **Generate for WhatsApp** → **📄 Copy Text** (WhatsApp code block aligned)
 
 ### 4. DLR Report
 
@@ -105,6 +106,15 @@ Download all four uploaded CSV files with standardised names for Google Drive ba
 | `applicableSmsGateway` | Gateway/operator name |
 | `ansResponseCode` | Answer response code (1xxx range) |
 
+### 4xx / 5xx HTTP (Optional)
+
+| Column | Description |
+|---|---|
+| `ans_type` | Source identifier (e.g. `bl`, `rb-proxy`, `mtn-proxy`) |
+| `event.original` | Nginx log line containing HTTP status code |
+
+Source matching is case-insensitive and partial — `bl-proxy` matches **BL**, `mtn-proxy` matches **MTN**.
+
 ### DLR
 
 | Column | Description |
@@ -128,7 +138,7 @@ Download all four uploaded CSV files with standardised names for Google Drive ba
 9. Click **📄 Copy Text** → paste as the caption message
 10. Go to **Drive Backup** tab → **⬇ Download All** → upload to Google Drive
 
-For HTTP reports: fill in source hits → **Generate for WhatsApp** → **📄 Copy Text**.
+For HTTP reports: upload CSV (optional) → fill/verify source hits → **Generate for WhatsApp** → **📄 Copy Text**.
 
 ---
 

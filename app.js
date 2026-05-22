@@ -47,6 +47,10 @@ function resetAll(btn){
     const totalEl = document.getElementById(`htotal-${s}`);
     if(totalEl){ totalEl.textContent = '—'; totalEl.style.color = ''; }
   });
+  const httpZone = document.getElementById('zone-http');
+  if(httpZone) httpZone.classList.remove('loaded');
+  const httpStatus = document.getElementById('status-http');
+  if(httpStatus) httpStatus.textContent = '';
 
   // Reset all datetimes
   ['9xxx','1xxx','http','dlr'].forEach(p => initDT(p));
@@ -559,7 +563,75 @@ function buildHTTPSources(){
 }
 buildHTTPSources();
 
-function toggleSrc(s){
+// ── HTTP CSV Parse ──
+const HTTP_SOURCE_MAP = {
+  'GP': 'gp', 'RB': 'rb', 'BL': 'bl', 'TT': 'tt', 'ADN': 'adn',
+  'FN': 'fn', 'MN': 'mn', 'BR': 'br', 'RT': 'rt', 'AIT': 'ait',
+  'MTN': 'mtn', 'PRM': 'prm', 'RCO': 'rco', 'BN': 'bn', 'WBL': 'wbl',
+  'RDT': 'rdt', 'BOS': 'bos', 'BTC': 'btc', 'LNK': 'lnk', 'ICO': 'ico',
+  'AGI': 'agi', 'ICC': 'icc'
+};
+
+function matchSource(ansType){
+  // Find which source this ans_type belongs to
+  const val = (ansType||'').toLowerCase();
+  for(const [src] of Object.entries(HTTP_SOURCE_MAP)){
+    if(val.includes(src.toLowerCase())) return src;
+  }
+  return null;
+}
+
+function parseHTTPcsv(file){
+  if(!file) return;
+  const statusEl = document.getElementById('status-http');
+  const zoneEl = document.getElementById('zone-http');
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parseCSV(e.target.result);
+    const sample = rows[0]||{};
+    const ansKey = findKey(sample, ['ans_type','ansType','ans_Type']);
+    const evtKey = findKey(sample, ['event.original','eventOriginal','event_original','original']);
+
+    if(!ansKey || !evtKey){
+      statusEl.textContent = '⚠ Columns not found (need ans_type, event.original)';
+      return;
+    }
+
+    // Count per source per HTTP code
+    const counts = {}; // source -> code -> count
+    HTTP_SOURCES.forEach(s => { counts[s] = {}; });
+
+    rows.forEach(r => {
+      const src = matchSource(r[ansKey]);
+      if(!src) return;
+      const evt = r[evtKey]||'';
+      const m = evt.match(/HTTP\/\d\.\d"\s+(\d{3})/);
+      if(!m) return;
+      const code = m[1];
+      if(!['400','401','402','403','404','500','501','502','503','504'].includes(code)) return;
+      counts[src][code] = (counts[src][code]||0) + 1;
+    });
+
+    // Fill inputs
+    HTTP_SOURCES.forEach(s => {
+      HTTP_CODES.forEach(c => {
+        const el = document.getElementById(`hc-${s}-${c}`);
+        if(el){
+          const v = counts[s][c]||0;
+          el.value = v > 0 ? v : '';
+        }
+      });
+      updateHTTPTotal(s);
+    });
+
+    statusEl.textContent = `✓ ${rows.length} rows parsed — sources auto-filled`;
+    zoneEl.classList.add('loaded');
+    refreshHTTP();
+  };
+  reader.readAsText(file);
+}
+
+
   document.getElementById(`src-${s}`).classList.toggle('open');
 }
 
