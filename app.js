@@ -595,7 +595,10 @@ function parseHTTPcsv(file){
     const rows = parseCSV(e.target.result);
     const sample = rows[0]||{};
     const ansKey = findKey(sample, ['ans_type','ansType','ans_Type']);
-    const evtKey = findKey(sample, ['event.original','eventOriginal','event_original','original']);
+    // event.original may have dot — check all keys directly
+    const evtKey = Object.keys(sample).find(k =>
+      k.toLowerCase().includes('event') || k.toLowerCase() === 'original'
+    ) || findKey(sample, ['event.original','eventOriginal','event_original','original']);
 
     if(!ansKey || !evtKey){
       statusEl.textContent = '⚠ Columns not found (need ans_type, event.original)';
