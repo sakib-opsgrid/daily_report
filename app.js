@@ -614,9 +614,16 @@ function parseHTTPcsv(file){
       const src = matchSource(r[ansKey]);
       if(!src) return;
       const evt = r[evtKey]||'';
-      const m = evt.match(/HTTP\/\d\.\d[" ]+(\d{3})/);
-      if(!m) return;
-      const code = m[1];
+      // Extract HTTP code by splitting on space and finding token after HTTP/x.x
+      const parts = evt.split(' ');
+      let code = null;
+      for(let i = 0; i < parts.length; i++){
+        if(parts[i].startsWith('HTTP/') && i+1 < parts.length){
+          const c = parts[i+1];
+          if(c && c.length === 3 && !isNaN(c)) { code = c; break; }
+        }
+      }
+      if(!code) return;
       if(!['400','401','402','403','404','500','501','502','503','504'].includes(code)) return;
       counts[src][code] = (counts[src][code]||0) + 1;
     });
