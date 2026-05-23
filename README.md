@@ -53,13 +53,13 @@ Tracks SMS answer response errors in the 1xxx range.
 
 Tracks HTTP error hits across all source operators (GP → ICC).
 
-- **Optional CSV upload**: upload ELK export → source hits auto-filled
+- **Optional CSV upload** — ELK Discover export auto-fills all source hits
 - Required columns: `ans_type`, `event.original`
-- `ans_type` matched to source by name (e.g. `bl`, `bl-proxy` → BL; `rb-proxy` → RB)
-- HTTP code extracted from `event.original` nginx log line
-- Manual entry also available — sources expand independently
+- `ans_type` matched to source by token — `rt/txn` → RT, `bl-proxy` → BL, `mtn-proxy` → MTN
+- HTTP code extracted from nginx log line in `event.original`
+- Manual entry also available after auto-fill
 - Sources with data highlighted in blue automatically
-- Click **Generate for WhatsApp** → **📄 Copy Text** (WhatsApp code block aligned)
+- Click **Generate for WhatsApp** → **📄 Copy Text**
 
 ### 4. DLR Report
 
@@ -110,10 +110,18 @@ Download all four uploaded CSV files with standardised names for Google Drive ba
 
 | Column | Description |
 |---|---|
-| `ans_type` | Source identifier (e.g. `bl`, `rb-proxy`, `mtn-proxy`) |
+| `ans_type` | Source identifier (e.g. `bl`, `rt/txn`, `mtn-proxy`) |
 | `event.original` | Nginx log line containing HTTP status code |
 
-Source matching is case-insensitive and partial — `bl-proxy` matches **BL**, `mtn-proxy` matches **MTN**.
+Source matching splits `ans_type` by `-`, `/`, `_` into tokens then matches each token against source names. Examples:
+
+| ans_type | Matched Source |
+|---|---|
+| `bl` | BL |
+| `bl-proxy` | BL |
+| `rt/txn` | RT |
+| `mtn-proxy` | MTN |
+| `bn/txn` | BN |
 
 ### DLR
 
@@ -131,14 +139,12 @@ Source matching is case-insensitive and partial — `bl-proxy` matches **BL**, `
 2. Select the report tab for the current shift window
 3. Set the **monitoring window** (From / To date and time)
 4. Upload the relevant ELK CSV export(s)
-5. Review the generated pivot table
+5. Review the generated pivot table or source breakdown
 6. Set **Prepared By** and **Status** (Normal / Issue)
-7. Click **Generate Screenshot View**
+7. Click **Generate Screenshot View** (or **Generate for WhatsApp** for HTTP)
 8. Click **📋 Copy as Image** → paste into WhatsApp
 9. Click **📄 Copy Text** → paste as the caption message
 10. Go to **Drive Backup** tab → **⬇ Download All** → upload to Google Drive
-
-For HTTP reports: upload CSV (optional) → fill/verify source hits → **Generate for WhatsApp** → **📄 Copy Text**.
 
 ---
 
