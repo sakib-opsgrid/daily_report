@@ -578,11 +578,14 @@ const HTTP_SOURCE_MAP = {
 };
 
 function matchSource(ansType){
-  const val = (ansType||'').toLowerCase().replace(/[-_\/]/g, '');
-  // Sort by length descending to match longest first (e.g. MTN before MN, WBL before BL)
+  const val = (ansType||'').toLowerCase();
+  // Split ans_type by separators to get tokens, then match against source names
+  const tokens = val.split(/[-\/_ ]/);
   const sorted = HTTP_SOURCES.slice().sort((a,b) => b.length - a.length);
   for(const src of sorted){
-    if(val.includes(src.toLowerCase())) return src;
+    const s = src.toLowerCase();
+    // Check if any token starts with or equals the source name
+    if(tokens.some(t => t === s || t.startsWith(s))) return src;
   }
   return null;
 }
