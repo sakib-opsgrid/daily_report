@@ -614,7 +614,7 @@ function parseHTTPcsv(file){
       const src = matchSource(r[ansKey]);
       if(!src) return;
       const evt = r[evtKey]||'';
-      const m = evt.match(/HTTP\/\d\.\d"\s+(\d{3})/);
+      const m = evt.match(/HTTP\/\d\.\d[" ]+(\d{3})/);
       if(!m) return;
       const code = m[1];
       if(!['400','401','402','403','404','500','501','502','503','504'].includes(code)) return;
