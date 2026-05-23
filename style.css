@@ -275,42 +275,49 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.6; }
   padding: 20px;
   background: #ffffff;
 }
-.ss-header { margin-bottom: 14px; }
-.ss-title { font-family: var(--mono); font-size: 13px; font-weight: 700; color: #111; letter-spacing: .02em; }
-.ss-meta { font-family: var(--mono); font-size: 11px; color: #666; margin-top: 4px; }
-.ss-table { border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 11.5px; }
+.ss-header { margin-bottom: 16px; }
+.ss-title { font-family: var(--mono); font-size: 15px; font-weight: 700; color: #0f172a; letter-spacing: .02em; }
+.ss-meta { font-family: var(--mono); font-size: 12px; color: #475569; margin-top: 5px; }
+.ss-table { border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 13px; }
 .ss-table th {
-  background: #f3f4f6;
-  color: #374151;
-  padding: 7px 12px;
+  background: #e8eaed;
+  color: #1a1a1a;
+  padding: 8px 14px;
   text-align: right;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
-  border: 1px solid #e5e7eb;
+  border: 1.5px solid #c0c4cc;
   white-space: nowrap;
   letter-spacing: .03em;
 }
 .ss-table th:first-child { text-align: left; }
 .ss-table td {
-  padding: 6px 12px;
+  padding: 7px 14px;
   text-align: right;
-  border: 1px solid #f3f4f6;
-  font-size: 11.5px;
-  color: #1f2937;
+  border: 1px solid #d8dbe2;
+  font-size: 13px;
+  color: #111827;
   white-space: nowrap;
 }
-.ss-table td:first-child { text-align: left; color: #374151; font-weight: 500; }
-.ss-table tr:nth-child(even) td { background: #fafafa; }
-.ss-table .grand-row td { font-weight: 700; background: #f0f9ff; color: #075985 !important; border-top: 2px solid #bae6fd; }
-.ss-table .zero { color: #d1d5db !important; }
+.ss-table td:first-child { text-align: left; color: #1f2937; font-weight: 600; }
+.ss-table tr:nth-child(even) td { background: #f5f6f8; }
+.ss-table tr:nth-child(odd) td { background: #ffffff; }
+.ss-table .grand-row td {
+  font-weight: 700;
+  background: #dbeafe;
+  color: #1e3a5f !important;
+  border-top: 2.5px solid #93c5fd;
+  font-size: 13.5px;
+}
+.ss-table .zero { color: #c8cdd6 !important; }
 .ss-footer {
-  margin-top: 12px;
+  margin-top: 14px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   font-family: 'Courier New', monospace;
-  font-size: 11px;
-  color: #6b7280;
+  font-size: 12.5px;
+  color: #4b5563;
 }
 .ss-footer strong { color: #111827; }
 .ss-status-normal { color: #15803d; font-weight: 700; }

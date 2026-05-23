@@ -1077,7 +1077,7 @@ async function copyAsImage(innerId, btn) {
     const rect = el.getBoundingClientRect();
     const canvas = await html2canvas(el, {
       backgroundColor: '#ffffff',
-      scale: 2,
+      scale: 3,
       useCORS: true,
       logging: false,
       width: rect.width,
