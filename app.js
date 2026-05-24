@@ -1080,6 +1080,10 @@ async function copyAsImage(innerId, btn) {
       scale: 3,
       useCORS: true,
       logging: false,
+      width: el.scrollWidth,
+      height: el.scrollHeight,
+      windowWidth: el.scrollWidth,
+      windowHeight: el.scrollHeight,
     });
     canvas.toBlob(async blob => {
       try {
