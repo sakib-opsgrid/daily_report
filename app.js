@@ -1074,17 +1074,25 @@ async function copyAsImage(innerId, btn) {
   btn.textContent = 'Generating…';
   btn.disabled = true;
   try {
-    const rect = el.getBoundingClientRect();
+    // Remove overflow clipping temporarily from all ancestor screenshot-cards
+    const card = el.closest('.screenshot-card');
+    if(card){
+      card.style.overflow = 'visible';
+      card.style.maxHeight = 'none';
+    }
+
+    // Let browser reflow
+    await new Promise(r => setTimeout(r, 50));
+
     const canvas = await html2canvas(el, {
       backgroundColor: '#ffffff',
       scale: 3,
       useCORS: true,
       logging: false,
-      width: el.scrollWidth,
-      height: el.scrollHeight,
-      windowWidth: el.scrollWidth,
-      windowHeight: el.scrollHeight,
     });
+
+    if(card){ card.style.overflow = ''; card.style.maxHeight = ''; }
+
     canvas.toBlob(async blob => {
       try {
         await navigator.clipboard.write([
