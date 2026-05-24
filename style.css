@@ -270,7 +270,8 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.6; }
 }
 .screenshot-card.show { display: block; }
 .ss-inner {
-  display: inline-block;
+  display: block;
+  width: fit-content;
   min-width: max-content;
   padding: 20px;
   background: #ffffff;
