@@ -1,678 +1,40 @@
-// ── Reset All ──
-function resetAll(btn){
-  if(!confirm('Reset all data? This will clear all uploaded files, form fields, and generated reports.')) return;
+'use strict';
+/* ================================================================
+   Service Assurance — Shift Report Tool
+   © 2026 Nickson Rizvi (Najmaz Sakib) · Infozillion Teletech BD
+   ================================================================ */
 
-  // Clear 9xxx
-  data9.mno = null; data9.iptsp = null;
-  data9.mno_file = null; data9.iptsp_file = null;
-  data9.mno_pivot = null; data9.iptsp_pivot = null;
-  document.getElementById('status-9mno').textContent = '';
-  document.getElementById('status-9iptsp').textContent = '';
-  document.getElementById('zone-9mno').classList.remove('loaded');
-  document.getElementById('zone-9iptsp').classList.remove('loaded');
-  document.getElementById('pivot-9mno').innerHTML = '<div class="no-data">Upload MNO CSV to generate pivot table</div>';
-  document.getElementById('pivot-9iptsp').innerHTML = '<div class="no-data">Upload IPTSP CSV to generate pivot table</div>';
-  document.getElementById('ss-9mno').className = 'screenshot-card';
-  document.getElementById('ss-9iptsp').className = 'screenshot-card';
-
-  // Clear 1xxx
-  data1.mno = null; data1.iptsp = null;
-  data1.mno_file = null; data1.iptsp_file = null;
-  data1.mno_pivot = null; data1.iptsp_pivot = null;
-  document.getElementById('status-1mno').textContent = '';
-  document.getElementById('status-1iptsp').textContent = '';
-  document.getElementById('zone-1mno').classList.remove('loaded');
-  document.getElementById('zone-1iptsp').classList.remove('loaded');
-  document.getElementById('pivot-1mno').innerHTML = '<div class="no-data">Upload MNO CSV to generate pivot table</div>';
-  document.getElementById('pivot-1iptsp').innerHTML = '<div class="no-data">Upload IPTSP CSV to generate pivot table</div>';
-  document.getElementById('ss-1mno').className = 'screenshot-card';
-  document.getElementById('ss-1iptsp').className = 'screenshot-card';
-
-  // Clear DLR
-  dlrData = {};
-  document.getElementById('status-dlr').textContent = '';
-  document.getElementById('zone-dlr').classList.remove('loaded');
-  document.getElementById('dlr-counts-box').innerHTML = '';
-  document.getElementById('dlr-manual-box').innerHTML = '';
-  document.getElementById('ss-dlr').className = 'screenshot-card';
-
-  // Clear HTTP source inputs
-  HTTP_SOURCES.forEach(s => {
-    HTTP_CODES.forEach(c => {
-      const el = document.getElementById(`hc-${s}-${c}`);
-      if(el) el.value = '';
-    });
-    const block = document.getElementById(`src-${s}`);
-    if(block) block.classList.remove('has-data','open');
-    const totalEl = document.getElementById(`htotal-${s}`);
-    if(totalEl){ totalEl.textContent = '—'; totalEl.style.color = ''; }
-  });
-  const httpZone = document.getElementById('zone-http');
-  if(httpZone) httpZone.classList.remove('loaded');
-  const httpStatus = document.getElementById('status-http');
-  if(httpStatus) httpStatus.textContent = '';
-
-  // Reset all datetimes
-  ['9xxx','1xxx','http','dlr'].forEach(p => initDT(p));
-
-  // Reset all reporters and statuses
-  ['9mno','9iptsp','1mno','1iptsp','http','dlr'].forEach(p => {
-    const rep = document.getElementById(`${p}-reporter`);
-    if(rep) rep.value = 'Rizvi';
-    setSt(p, 'Normal');
-  });
-
-  // Reset file inputs
-  document.querySelectorAll('input[type=file]').forEach(f => { f.value = ''; });
-
-  // Refresh previews
-  refreshHTTP();
-  const httpOut = document.getElementById('http-output');
-  if(httpOut) httpOut.style.display = 'none';
-
-  // Reset Drive Backup list
-  const list = document.getElementById('save-file-list');
-  if(list) list.innerHTML = '';
-
-  const orig = btn.textContent;
-  btn.textContent = 'Done ✓';
-  setTimeout(() => { btn.textContent = orig; }, 2000);
-}
-
-// ── Clock ──
+// ── CLOCK ─────────────────────────────────────────────────────────
 function updateClock(){
   const n = new Date();
+  const p = s => String(s).padStart(2,'0');
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   document.getElementById('clock').textContent =
-    n.toLocaleDateString('en-BD',{weekday:'short',month:'short',day:'numeric'}) + '  ' +
-    n.toLocaleTimeString('en-BD',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    `${days[n.getDay()]} ${mons[n.getMonth()]} ${p(n.getDate())}  ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
 }
-setInterval(updateClock, 1000); updateClock();
+setInterval(updateClock,1000); updateClock();
 
-// ── Init datetimes ──
-function pad(n){ return String(n).padStart(2,'0'); }
-function initDT(prefix, offsetHrs=0){
+// ── UTILS ─────────────────────────────────────────────────────────
+const pad = n => String(n).padStart(2,'0');
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('toast--show');
+  setTimeout(()=>t.classList.remove('toast--show'),2800);
+}
+
+function initDT(prefix){
   const n = new Date();
-  const from = new Date(n); from.setHours(from.getHours() - (offsetHrs||2));
-  const toD = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  const toT = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const from = new Date(n); from.setHours(from.getHours()-2);
+  const toD = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const toT = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   document.getElementById(`${prefix}-from-date`).value = toD(from);
   document.getElementById(`${prefix}-from-time`).value = toT(from);
-  document.getElementById(`${prefix}-to-date`).value = toD(n);
-  document.getElementById(`${prefix}-to-time`).value = toT(n);
-}
-document.addEventListener('DOMContentLoaded', () => {
-  ['9xxx','1xxx','http','dlr'].forEach(p => initDT(p));
-});
-
-// ── Tab switching ──
-function switchTab(id, el){
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-'+id).classList.add('active');
-  el.classList.add('active');
-  if(id==='4xx5xx') refreshHTTP();
-  if(id==='savefiles') refreshSaveFiles();
-}
-
-// ── Sub tab ──
-function show9sub(which, el){
-  document.getElementById('9sub-mno').style.display = which==='mno'?'block':'none';
-  document.getElementById('9sub-iptsp').style.display = which==='iptsp'?'block':'none';
-  el.closest('.sub-tabs').querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-}
-function show1sub(which, el){
-  document.getElementById('1sub-mno').style.display = which==='mno'?'block':'none';
-  document.getElementById('1sub-iptsp').style.display = which==='iptsp'?'block':'none';
-  el.closest('.sub-tabs').querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-}
-
-// ── Status toggle ──
-const statusMap = {};
-function setSt(prefix, val){
-  statusMap[prefix] = val;
-  const bn = document.getElementById(`${prefix}-btn-n`);
-  const bi = document.getElementById(`${prefix}-btn-i`);
-  const box = document.getElementById(`${prefix}-issue-box`);
-  if(val==='Normal'){
-    bn.className='st-btn normal-on'; bi.className='st-btn';
-    if(box) box.style.display='none';
-  } else {
-    bi.className='st-btn issue-on'; bn.className='st-btn';
-    if(box){ box.style.display='block'; box.querySelector('textarea').focus(); }
-  }
-}
-['9mno','9iptsp','1mno','1iptsp','http','dlr'].forEach(p => { statusMap[p]='Normal'; });
-
-// ── CSV Parser ──
-function parseCSV(text){
-  const lines = text.split(/\r?\n/).filter(Boolean);
-  if(!lines.length) return [];
-  // Detect delimiter
-  const delim = lines[0].includes('\t') ? '\t' : ',';
-  const headers = lines[0].split(delim).map(h=>h.replace(/^"|"$/g,'').trim());
-  return lines.slice(1).map(line => {
-    const vals = splitCSVLine(line, delim);
-    const obj = {};
-    headers.forEach((h,i) => { obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim(); });
-    return obj;
-  }).filter(r => Object.values(r).some(v=>v));
-}
-
-function splitCSVLine(line, delim){
-  const result = []; let cur=''; let inQ=false;
-  for(let i=0;i<line.length;i++){
-    if(line[i]==='"'){ inQ=!inQ; }
-    else if(line[i]===delim && !inQ){ result.push(cur); cur=''; }
-    else { cur+=line[i]; }
-  }
-  result.push(cur);
-  return result;
-}
-
-// ── 9xxx Data store ──
-const data9 = { mno: null, iptsp: null, mno_file: null, iptsp_file: null };
-
-function parse9xxx(file, which){
-  if(!file) return;
-  data9[`${which}_file`] = file; // store raw file
-  const reader = new FileReader();
-  reader.onload = e => {
-    const rows = parseCSV(e.target.result);
-    const statusEl = document.getElementById(`status-9${which}`);
-    const zoneEl = document.getElementById(`zone-9${which}`);
-
-    // Find columns
-    const sample = rows[0]||{};
-    const clientKey = findKey(sample, ['clientId','client_id','ClientId','client']);
-    const codeKey = findKey(sample, ['a2pResponseCode','a2presponsecode','a2pResponsecode','responseCode']);
-
-    if(!clientKey || !codeKey){
-      statusEl.textContent = `⚠ Columns not found (need clientId, a2pResponseCode)`;
-      return;
-    }
-
-    data9[which] = rows;
-    statusEl.textContent = `✓ ${rows.length} rows loaded`;
-    zoneEl.classList.add('loaded');
-    renderPivot9(which, rows, clientKey, codeKey);
-  };
-  reader.readAsText(file);
-}
-
-function findKey(obj, options){
-  const keys = Object.keys(obj).map(k=>k.trim());
-  for(const opt of options){
-    const found = keys.find(k=>k.toLowerCase()===opt.toLowerCase());
-    if(found) return found;
-  }
-  return null;
-}
-
-function renderPivot9(which, rows, clientKey, codeKey){
-  // Build pivot: row=clientId, col=a2pResponseCode
-  const clients = new Set();
-  const codes = new Set();
-  const counts = {};
-
-  rows.forEach(r => {
-    const client = r[clientKey]||'null';
-    const code = r[codeKey]||'null';
-    clients.add(client);
-    codes.add(code);
-    const k = `${client}::${code}`;
-    counts[k] = (counts[k]||0) + 1;
-  });
-
-  const sortedClients = [...clients].sort();
-  const sortedCodes = [...codes].sort();
-
-  // Build dark pivot (for tool view)
-  let html = `<table class="pivot-table"><thead><tr>
-    <th>Row Labels</th>`;
-  sortedCodes.forEach(c => { html += `<th>${c}</th>`; });
-  html += `<th>Grand Total</th></tr></thead><tbody>`;
-
-  const colTotals = {};
-  sortedCodes.forEach(c => { colTotals[c]=0; });
-  let grandTotal = 0;
-
-  sortedClients.forEach(client => {
-    let rowTotal = 0;
-    let rowHtml = `<tr><td>${client}</td>`;
-    sortedCodes.forEach(c => {
-      const v = counts[`${client}::${c}`]||0;
-      colTotals[c] += v;
-      rowTotal += v;
-      rowHtml += `<td class="${v===0?'zero':'has-val'}">${v===0?'':v}</td>`;
-    });
-    grandTotal += rowTotal;
-    rowHtml += `<td class="has-val">${rowTotal||''}</td></tr>`;
-    html += rowHtml;
-  });
-
-  // Grand total row
-  html += `<tr class="grand-row"><td>Grand Total</td>`;
-  sortedCodes.forEach(c => { html += `<td>${colTotals[c]||''}</td>`; });
-  html += `<td>${grandTotal}</td></tr>`;
-  html += `</tbody></table>`;
-
-  document.getElementById(`pivot-9${which}`).innerHTML = html;
-
-  // Store for screenshot
-  data9[`${which}_pivot`] = { sortedClients, sortedCodes, counts, colTotals, grandTotal };
-}
-
-// ── Build screenshot view (white/clean) for 9xxx ──
-function buildScreenshot(prefix){
-  const which = prefix.replace('9','');
-  const pivot = data9[`${which}_pivot`];
-  const ssEl = document.getElementById(`ss-${prefix}`);
-
-  if(!pivot){
-    alert('Please upload CSV first');
-    return;
-  }
-
-  const { sortedClients, sortedCodes, counts, colTotals, grandTotal } = pivot;
-  const reporter = document.getElementById(`${prefix}-reporter`).value || '—';
-  const status = statusMap[prefix] || 'Normal';
-  const issue = document.getElementById(`${prefix}-issue`)?.value.trim() || '';
-  const statusStr = status === 'Normal' ? 'Normal' : (issue||'Issue');
-
-  const fromDate = document.getElementById('9xxx-from-date').value;
-  const fromTime = document.getElementById('9xxx-from-time').value;
-  const toDate = document.getElementById('9xxx-to-date').value;
-  const toTime = document.getElementById('9xxx-to-time').value;
-  const period = `${fmtDT(fromDate, fromTime)} - ${fmtDT(toDate, toTime)}`;
-
-  const typeLabel = which === 'mno' ? 'MNO' : 'IPTSP';
-
-  // Build count label for column header
-  let tableHtml = `<table class="ss-table"><thead><tr>
-    <th>Count of a2pResponseCode</th>
-    <th colspan="${sortedCodes.length}" style="text-align:center;background:#e8e8e8;">Column Labels</th>
-    <th>Grand Total</th>
-  </tr><tr>
-    <th>Row Labels</th>`;
-  sortedCodes.forEach(c => { tableHtml += `<th>${c}</th>`; });
-  tableHtml += `<th>Grand Total</th></tr></thead><tbody>`;
-
-  sortedClients.forEach(client => {
-    let rowTotal = 0;
-    let rowHtml = `<tr><td>${client}</td>`;
-    sortedCodes.forEach(c => {
-      const v = counts[`${client}::${c}`]||0;
-      rowTotal += v;
-      rowHtml += `<td class="${v===0?'zero':''}">${v===0?'':v}</td>`;
-    });
-    rowHtml += `<td>${rowTotal||''}</td></tr>`;
-    tableHtml += rowHtml;
-  });
-
-  tableHtml += `<tr class="grand-row"><td>Grand Total</td>`;
-  sortedCodes.forEach(c => { tableHtml += `<td>${colTotals[c]||''}</td>`; });
-  tableHtml += `<td>${grandTotal}</td></tr></tbody></table>`;
-
-  const statusClass = status==='Normal' ? 'ss-status-normal' : 'ss-status-issue';
-
-  ssEl.innerHTML = `
-    <div class="ss-inner" id="ss-inner-${prefix}">
-      <div class="ss-header">
-        <div>
-          <div class="ss-title">9xxx Error Report — ${typeLabel}</div>
-          <div class="ss-meta">${period}</div>
-        </div>
-      </div>
-      ${tableHtml}
-      <div class="ss-footer">
-        <div><strong>Reporter:</strong> ${reporter}</div>
-        <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
-      </div>
-    </div>
-    <div class="ss-actions">
-      <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
-      <button class="btn-copy-img" onclick="copyReportText('${typeLabel}','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
-    </div>`;
-
-  ssEl.classList.add('show');
-  setTimeout(() => ssEl.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
-}
-
-// ── 1xxx Data store ──
-const data1 = { mno: null, iptsp: null, mno_file: null, iptsp_file: null };
-
-function parse1xxx(file, which){
-  if(!file) return;
-  data1[`${which}_file`] = file; // store raw file
-  const reader = new FileReader();
-  reader.onload = e => {
-    const rows = parseCSV(e.target.result);
-    const statusEl = document.getElementById(`status-1${which}`);
-    const zoneEl = document.getElementById(`zone-1${which}`);
-
-    const sample = rows[0]||{};
-    const clientKey = findKey(sample, ['clientId','client_id','ClientId','client']);
-    const gwKey = findKey(sample, ['applicableSmsGateway','applicablesmsgateway','smsGateway','gateway','applicableSmsGateway.keyword']);
-    const codeKey = findKey(sample, ['ansResponseCode','ansresponsecode','ansResponsecode','ansResponse']);
-
-    if(!clientKey || !codeKey){
-      statusEl.textContent = `⚠ Columns not found (need clientId, applicableSmsGateway, ansResponseCode)`;
-      return;
-    }
-
-    data1[which] = rows;
-    statusEl.textContent = `✓ ${rows.length} rows loaded`;
-    zoneEl.classList.add('loaded');
-    renderPivot1(which, rows, clientKey, gwKey, codeKey);
-  };
-  reader.readAsText(file);
-}
-
-function renderPivot1(which, rows, clientKey, gwKey, codeKey){
-  // Columns: gateway grouped, with sub-codes, then grand total
-  // Rows: clientId
-  const clients = new Set();
-  const gwCodeCols = []; // [{gw, code}] unique combos
-  const gwCodeSet = new Set();
-  const gateways = new Set();
-  const codes = new Set();
-  const counts = {}; // key: clientId::gw::code
-
-  rows.forEach(r => {
-    const client = r[clientKey]||'null';
-    const gw = gwKey ? (r[gwKey]||'null') : 'null';
-    const code = r[codeKey]||'null';
-    clients.add(client);
-    gateways.add(gw);
-    codes.add(code);
-    const combo = `${gw}::${code}`;
-    if(!gwCodeSet.has(combo)){
-      gwCodeSet.add(combo);
-      gwCodeCols.push({gw, code});
-    }
-    const k = `${client}::${gw}::${code}`;
-    counts[k] = (counts[k]||0) + 1;
-  });
-
-  // Sort: by gw then code
-  gwCodeCols.sort((a,b) => a.gw.localeCompare(b.gw)||a.code.localeCompare(b.code));
-  const sortedClients = [...clients].sort();
-  const sortedGWs = [...new Set(gwCodeCols.map(x=>x.gw))];
-
-  // Build header row 1: gw groups with colspan
-  const gwGroups = {};
-  gwCodeCols.forEach(({gw}) => { gwGroups[gw]=(gwGroups[gw]||0)+1; });
-
-  // DARK PIVOT
-  let html = `<table class="pivot-table"><thead>`;
-  // Row 1: gw headers
-  html += `<tr><th rowspan="2">Row Labels</th>`;
-  sortedGWs.forEach(gw => {
-    html += `<th colspan="${gwGroups[gw]+1}" style="text-align:center;border-bottom:1px solid #333;">${gw}</th>`;
-  });
-  html += `<th rowspan="2">Grand Total</th></tr>`;
-  // Row 2: code sub-headers + total per gw
-  html += `<tr>`;
-  sortedGWs.forEach(gw => {
-    gwCodeCols.filter(x=>x.gw===gw).forEach(({code}) => { html += `<th>${code}</th>`; });
-    html += `<th>${gw} Total</th>`;
-  });
-  html += `</tr></thead><tbody>`;
-
-  const colTotals = {}; // gw::code -> total
-  const gwTotals = {};  // gw -> total
-  gwCodeCols.forEach(({gw,code}) => { colTotals[`${gw}::${code}`]=0; });
-  sortedGWs.forEach(gw => { gwTotals[gw]=0; });
-  let grandTotal = 0;
-
-  sortedClients.forEach(client => {
-    let rowTotal = 0;
-    let rowHtml = `<tr><td>${client}</td>`;
-    sortedGWs.forEach(gw => {
-      let gwRow = 0;
-      gwCodeCols.filter(x=>x.gw===gw).forEach(({code}) => {
-        const v = counts[`${client}::${gw}::${code}`]||0;
-        colTotals[`${gw}::${code}`] += v;
-        gwTotals[gw] += v;
-        gwRow += v;
-        rowHtml += `<td class="${v===0?'zero':'has-val'}">${v===0?'':v}</td>`;
-      });
-      rowTotal += gwRow;
-      rowHtml += `<td class="${gwRow===0?'zero':'has-val'}">${gwRow||''}</td>`;
-    });
-    grandTotal += rowTotal;
-    rowHtml += `<td class="has-val">${rowTotal||''}</td></tr>`;
-    html += rowHtml;
-  });
-
-  // Grand total row
-  html += `<tr class="grand-row"><td>Grand Total</td>`;
-  sortedGWs.forEach(gw => {
-    gwCodeCols.filter(x=>x.gw===gw).forEach(({code}) => { html += `<td>${colTotals[`${gw}::${code}`]||''}</td>`; });
-    html += `<td>${gwTotals[gw]||''}</td>`;
-  });
-  html += `<td>${grandTotal}</td></tr></tbody></table>`;
-
-  document.getElementById(`pivot-1${which}`).innerHTML = html;
-  data1[`${which}_pivot`] = { sortedClients, gwCodeCols, sortedGWs, gwGroups, counts, colTotals, gwTotals, grandTotal };
-}
-
-function buildScreenshot1(prefix){
-  const which = prefix.replace('1','');
-  const pivot = data1[`${which}_pivot`];
-  const ssEl = document.getElementById(`ss-${prefix}`);
-
-  if(!pivot){ alert('Please upload CSV first'); return; }
-
-  const { sortedClients, gwCodeCols, sortedGWs, gwGroups, counts, colTotals, gwTotals, grandTotal } = pivot;
-  const reporter = document.getElementById(`${prefix}-reporter`).value || '—';
-  const status = statusMap[prefix] || 'Normal';
-  const issue = document.getElementById(`${prefix}-issue`)?.value.trim() || '';
-  const statusStr = status === 'Normal' ? 'Normal' : (issue||'Issue');
-  const fromDate = document.getElementById('1xxx-from-date').value;
-  const fromTime = document.getElementById('1xxx-from-time').value;
-  const toDate = document.getElementById('1xxx-to-date').value;
-  const toTime = document.getElementById('1xxx-to-time').value;
-  const period = `${fmtDT(fromDate, fromTime)} - ${fmtDT(toDate, toTime)}`;
-  const typeLabel = which === 'mno' ? 'MNO' : 'IPTSP';
-
-  let tableHtml = `<table class="ss-table"><thead>`;
-  tableHtml += `<tr><th rowspan="2">Count of ansResponseCode</th>`;
-  sortedGWs.forEach(gw => {
-    tableHtml += `<th colspan="${gwGroups[gw]+1}" style="text-align:center;background:#e0e0e0;">${gw}</th>`;
-  });
-  tableHtml += `<th rowspan="2">Grand Total</th></tr><tr>`;
-  sortedGWs.forEach(gw => {
-    gwCodeCols.filter(x=>x.gw===gw).forEach(({code}) => { tableHtml += `<th>${code}</th>`; });
-    tableHtml += `<th>${gw} Total</th>`;
-  });
-  tableHtml += `</tr></thead><tbody>`;
-
-  sortedClients.forEach(client => {
-    let rowTotal = 0;
-    let rh = `<tr><td>${client}</td>`;
-    sortedGWs.forEach(gw => {
-      let gwRow = 0;
-      gwCodeCols.filter(x=>x.gw===gw).forEach(({code}) => {
-        const v = counts[`${client}::${gw}::${code}`]||0;
-        gwRow += v; rowTotal += v;
-        rh += `<td class="${v===0?'zero':''}">${v===0?'':v}</td>`;
-      });
-      rh += `<td>${gwRow||''}</td>`;
-    });
-    rh += `<td>${rowTotal||''}</td></tr>`;
-    tableHtml += rh;
-  });
-
-  tableHtml += `<tr class="grand-row"><td>Grand Total</td>`;
-  sortedGWs.forEach(gw => {
-    gwCodeCols.filter(x=>x.gw===gw).forEach(({code}) => { tableHtml += `<td>${colTotals[`${gw}::${code}`]||''}</td>`; });
-    tableHtml += `<td>${gwTotals[gw]||''}</td>`;
-  });
-  tableHtml += `<td>${grandTotal}</td></tr></tbody></table>`;
-
-  const statusClass = status==='Normal' ? 'ss-status-normal' : 'ss-status-issue';
-  ssEl.innerHTML = `
-    <div class="ss-inner" id="ss-inner-${prefix}">
-      <div class="ss-header">
-        <div>
-          <div class="ss-title">1xxx Error Report — ${typeLabel}</div>
-          <div class="ss-meta">${period}</div>
-        </div>
-      </div>
-      ${tableHtml}
-      <div class="ss-footer">
-        <div><strong>Reporter:</strong> ${reporter}</div>
-        <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
-      </div>
-    </div>
-    <div class="ss-actions">
-      <button class="btn-copy-img" onclick="copyAsImage('ss-inner-${prefix}', this)">📋 Copy as Image</button>
-      <button class="btn-copy-img" onclick="copyReportText('${typeLabel}','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
-    </div>`;
-  ssEl.classList.add('show');
-  setTimeout(() => ssEl.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
-}
-
-// ── HTTP 4xx/5xx ──
-const HTTP_SOURCES = ["GP","RB","BL","TT","ADN","FN","MN","BR","RT","AIT","MTN","PRM","RCO","BN","WBL","RDT","BOS","BTC","LNK","ICO","AGI","ICC"];
-const HTTP_CODES   = ["400","401","402","403","404","500","501","502","503","504"];
-
-function buildHTTPSources(){
-  const sl = document.getElementById('http-source-list');
-  HTTP_SOURCES.forEach(s => {
-    const block = document.createElement('div');
-    block.className = 'src-block';
-    block.id = `src-${s}`;
-    const codesHtml = HTTP_CODES.map(c =>
-      `<div class="code-item"><label>${c}</label>
-       <input type="number" id="hc-${s}-${c}" placeholder="0" min="0" oninput="updateHTTPTotal('${s}');refreshHTTP()"></div>`
-    ).join('');
-    block.innerHTML = `
-      <div class="src-header" onclick="toggleSrc('${s}')">
-        <span class="src-name">${s}</span>
-        <span style="display:flex;align-items:center;gap:4px;">
-          <span class="src-total" id="htotal-${s}">—</span>
-          <span class="src-arrow">▼</span>
-        </span>
-      </div>
-      <div class="src-codes"><div class="codes-grid">${codesHtml}</div></div>`;
-    sl.appendChild(block);
-  });
-}
-buildHTTPSources();
-
-function toggleSrc(s){
-  document.getElementById(`src-${s}`).classList.toggle('open');
-}
-
-// ── HTTP CSV Parse ──
-const HTTP_SOURCE_MAP = {
-  'GP': 'gp', 'RB': 'rb', 'BL': 'bl', 'TT': 'tt', 'ADN': 'adn',
-  'FN': 'fn', 'MN': 'mn', 'BR': 'br', 'RT': 'rt', 'AIT': 'ait',
-  'MTN': 'mtn', 'PRM': 'prm', 'RCO': 'rco', 'BN': 'bn', 'WBL': 'wbl',
-  'RDT': 'rdt', 'BOS': 'bos', 'BTC': 'btc', 'LNK': 'lnk', 'ICO': 'ico',
-  'AGI': 'agi', 'ICC': 'icc'
-};
-
-function matchSource(ansType){
-  const val = (ansType||'').toLowerCase();
-  // Split ans_type by separators to get tokens, then match against source names
-  const tokens = val.split(/[-\/_ ]/);
-  const sorted = HTTP_SOURCES.slice().sort((a,b) => b.length - a.length);
-  for(const src of sorted){
-    const s = src.toLowerCase();
-    // Check if any token starts with or equals the source name
-    if(tokens.some(t => t === s || t.startsWith(s))) return src;
-  }
-  return null;
-}
-
-function parseHTTPcsv(file){
-  if(!file) return;
-  const statusEl = document.getElementById('status-http');
-  const zoneEl = document.getElementById('zone-http');
-  const reader = new FileReader();
-  reader.onload = e => {
-    const rows = parseCSV(e.target.result);
-    const sample = rows[0]||{};
-    const ansKey = findKey(sample, ['ans_type','ansType','ans_Type']);
-    // event.original may have dot — check all keys directly
-    const evtKey = Object.keys(sample).find(k =>
-      k.toLowerCase().includes('event') || k.toLowerCase() === 'original'
-    ) || findKey(sample, ['event.original','eventOriginal','event_original','original']);
-
-    if(!ansKey || !evtKey){
-      statusEl.textContent = '⚠ Columns not found (need ans_type, event.original)';
-      return;
-    }
-
-    // Count per source per HTTP code
-    const counts = {}; // source -> code -> count
-    HTTP_SOURCES.forEach(s => { counts[s] = {}; });
-
-    rows.forEach(r => {
-      const src = matchSource(r[ansKey]);
-      if(!src) return;
-      const evt = r[evtKey]||'';
-      // Extract HTTP code by splitting on space and finding token after HTTP/x.x
-      const parts = evt.split(' ');
-      let code = null;
-      for(let i = 0; i < parts.length; i++){
-        if(parts[i].startsWith('HTTP/') && i+1 < parts.length){
-          const c = parts[i+1];
-          if(c && c.length === 3 && !isNaN(c)) { code = c; break; }
-        }
-      }
-      if(!code) return;
-      if(!['400','401','402','403','404','500','501','502','503','504'].includes(code)) return;
-      counts[src][code] = (counts[src][code]||0) + 1;
-    });
-
-    // Fill inputs
-    HTTP_SOURCES.forEach(s => {
-      HTTP_CODES.forEach(c => {
-        const el = document.getElementById(`hc-${s}-${c}`);
-        if(el){
-          const v = counts[s][c]||0;
-          el.value = v > 0 ? v : '';
-        }
-      });
-      updateHTTPTotal(s);
-    });
-
-    statusEl.textContent = `✓ ${rows.length} rows parsed — sources auto-filled`;
-    zoneEl.classList.add('loaded');
-    refreshHTTP();
-  };
-  reader.readAsText(file);
-}
-
-
-function toggleSrc(s){
-  document.getElementById(`src-${s}`).classList.toggle('open');
-}
-
-function getHVal(s,c){
-  const v=parseInt(document.getElementById(`hc-${s}-${c}`).value);
-  return isNaN(v)?0:v;
-}
-
-function updateHTTPTotal(s){
-  const total = HTTP_CODES.reduce((sum,c)=>sum+getHVal(s,c),0);
-  const el = document.getElementById(`htotal-${s}`);
-  const block = document.getElementById(`src-${s}`);
-  if(total > 0){
-    el.textContent = `${total} hits`;
-    el.style.color = 'var(--accent)';
-    block.classList.add('has-data');
-  } else {
-    el.textContent = '—';
-    el.style.color = '';
-    block.classList.remove('has-data');
-  }
+  document.getElementById(`${prefix}-to-date`).value   = toD(n);
+  document.getElementById(`${prefix}-to-time`).value   = toT(n);
 }
 
 function fmtDT(dateVal, timeVal){
@@ -685,435 +47,1210 @@ function fmtDT(dateVal, timeVal){
 
 function fmtTimeNow(){ const n=new Date(); return `${pad(n.getHours())}:${pad(n.getMinutes())}`; }
 
-function buildHTTPReport(){
-  const fromDate = document.getElementById('http-from-date').value;
-  const fromTime = document.getElementById('http-from-time').value;
-  const toDate   = document.getElementById('http-to-date').value;
-  const toTime   = document.getElementById('http-to-time').value;
-  const reporter = document.getElementById('http-reporter').value||'—';
-  const status   = statusMap['http']||'Normal';
-  const issue    = document.getElementById('http-issue').value.trim();
-  const statusStr= status==='Normal'?'Normal':(issue||'—');
-  const period   = `${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
+// ── CSV PARSER ────────────────────────────────────────────────────
+function parseCSV(text){
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  if(lines.length<2) throw new Error('File has no data rows');
+  const delim = lines[0].includes('\t') ? '\t' : ',';
+  const headers = lines[0].split(delim).map(h=>h.replace(/^"|"$/g,'').trim());
+  return lines.slice(1).map(line=>{
+    const vals = splitCSVLine(line,delim);
+    const obj={};
+    headers.forEach((h,i)=>{ obj[h]=(vals[i]||'').replace(/^"|"$/g,'').trim(); });
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>v));
+}
 
-  const lines = HTTP_SOURCES.map(s => {
-    const parts = [];
-    HTTP_CODES.forEach(c => { const v=getHVal(s,c); if(v>0) parts.push(`${c}-${v}`); });
-    const total = parts.reduce((sum,p)=>sum+parseInt(p.split('-')[1]),0);
-    const padS = s.padEnd(5,' ');
-    return total===0 ? `${padS}: 0 hits` : `${padS}: ${total} hits (${parts.join(', ')})`;
+function splitCSVLine(line,delim){
+  const result=[]; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    if(line[i]==='"'){ inQ=!inQ; }
+    else if(line[i]===delim&&!inQ){ result.push(cur); cur=''; }
+    else { cur+=line[i]; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function findKey(obj,options){
+  const keys = Object.keys(obj).map(k=>k.trim());
+  for(const opt of options){
+    const found = keys.find(k=>k.toLowerCase()===opt.toLowerCase());
+    if(found) return found;
+  }
+  return null;
+}
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────
+function switchTab(id,el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='4xx5xx') refreshHTTP();
+  if(id==='backup') refreshBackup();
+}
+
+// ── STATUS TOGGLE ─────────────────────────────────────────────────
+const statusMap={};
+['9mno','9iptsp','1mno','1iptsp','http','dlr'].forEach(p=>{statusMap[p]='Normal';});
+
+function setSt(prefix,val){
+  statusMap[prefix]=val;
+  const bn=document.getElementById(`${prefix}-btn-n`);
+  const bi=document.getElementById(`${prefix}-btn-i`);
+  const box=document.getElementById(`${prefix}-issue-box`);
+  if(val==='Normal'){
+    bn.className='st-btn normal-on'; bi.className='st-btn';
+    if(box) box.style.display='none';
+  } else {
+    bi.className='st-btn issue-on'; bn.className='st-btn';
+    if(box){ box.style.display='block'; box.querySelector('textarea').focus(); }
+  }
+}
+
+// ── CAPTURE / COPY IMAGE ──────────────────────────────────────────
+async function captureScreenshot(cardId, download, btn){
+  const card = document.getElementById(cardId);
+  if(!card||!card.innerHTML.trim()){ showToast('Generate a card first'); return; }
+  const origText = btn.textContent;
+  btn.textContent = 'Generating…';
+  btn.disabled = true;
+  showToast('Generating image…');
+
+  const fullW = card.scrollWidth;
+  const fullH = card.scrollHeight;
+  card.style.setProperty('width',  fullW+'px','important');
+  card.style.setProperty('height', fullH+'px','important');
+  card.style.setProperty('overflow','visible','important');
+  card.style.setProperty('max-width','none','important');
+
+  await new Promise(r=>setTimeout(r,80));
+  const w = card.offsetWidth;
+  const h = card.offsetHeight;
+
+  const restore=()=>{
+    card.style.removeProperty('width');
+    card.style.removeProperty('height');
+    card.style.removeProperty('overflow');
+    card.style.removeProperty('max-width');
+  };
+
+  try {
+    const canvas = await html2canvas(card,{
+      backgroundColor:'#FFFFFF', scale:2.5, useCORS:true, logging:false,
+      width:w, height:h, windowWidth:w+200, windowHeight:h+200, x:0, y:0, scrollX:0, scrollY:0
+    });
+    restore();
+    if(download){
+      const a=document.createElement('a');
+      a.href=canvas.toDataURL('image/png');
+      a.download=`report_${formatFileDate(new Date())}.png`;
+      a.click();
+      showToast('Downloaded ✓');
+    } else {
+      canvas.toBlob(async blob=>{
+        try{
+          await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+          showToast('Copied! Paste in WhatsApp ✓');
+        } catch {
+          const url=URL.createObjectURL(blob);
+          window.open(url,'_blank');
+          showToast('Opened in new tab — save & share');
+        }
+      },'image/png');
+    }
+  } catch(err){
+    restore();
+    showToast('Capture failed: '+err.message);
+  }
+  btn.textContent=origText;
+  btn.disabled=false;
+}
+
+function formatFileDate(d){
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+}
+
+// ── COPY TEXT ─────────────────────────────────────────────────────
+function doCopy(id, btn){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const text = el.textContent || el.value;
+  navigator.clipboard.writeText(text).then(()=>{
+    const orig=btn.textContent; btn.textContent='Copied ✓';
+    setTimeout(()=>btn.textContent=orig,2000);
+  }).catch(()=>showToast('Copy failed'));
+}
+
+function copyReportText(typeLabel, prefix, btn){
+  const reporter = document.getElementById(`${prefix}-reporter`)?.value||'—';
+  const status = statusMap[prefix]||'Normal';
+  const issue = document.getElementById(`${prefix}-issue`)?.value.trim()||'';
+  const statusStr = status==='Normal'?'Normal':(issue||'—');
+  const isNine = prefix.startsWith('9');
+  const fromDate = document.getElementById(`${isNine?'9xxx':'1xxx'}-from-date`).value;
+  const fromTime = document.getElementById(`${isNine?'9xxx':'1xxx'}-from-time`).value;
+  const toDate   = document.getElementById(`${isNine?'9xxx':'1xxx'}-to-date`).value;
+  const toTime   = document.getElementById(`${isNine?'9xxx':'1xxx'}-to-time`).value;
+  const period = `${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
+  const text = `${typeLabel},\n${period}\n\nReporter: ${reporter}\nStatus  : ${statusStr}`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const orig=btn.textContent; btn.textContent='Copied ✓';
+    setTimeout(()=>btn.textContent=orig,2000);
   });
+}
 
-  return { period, srcLines: lines.join('\n'), reporter, statusStr };
+// ═══════════════════════════════════════════════════════════════════
+// 9XXX
+// ═══════════════════════════════════════════════════════════════════
+const data9={mno:null,iptsp:null,mno_file:null,iptsp_file:null};
+
+function show9sub(which,el){
+  document.getElementById('9sub-mno').style.display   = which==='mno'?'block':'none';
+  document.getElementById('9sub-iptsp').style.display = which==='iptsp'?'block':'none';
+  document.getElementById('9sub-mno-btn').className   = which==='mno'?'btn btn--outline btn--sm':'btn btn--ghost btn--sm';
+  document.getElementById('9sub-iptsp-btn').className = which==='iptsp'?'btn btn--outline btn--sm':'btn btn--ghost btn--sm';
+}
+
+function parse9xxx(file,which){
+  if(!file) return;
+  data9[`${which}_file`]=file;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const rows=parseCSV(e.target.result);
+    const statusEl=document.getElementById(`status-9${which}`);
+    const zoneEl=document.getElementById(`zone-9${which}`);
+    const sample=rows[0]||{};
+    const clientKey=findKey(sample,['clientId','client_id','ClientId','client']);
+    const codeKey=findKey(sample,['a2pResponseCode','a2presponsecode','a2pResponsecode','responseCode']);
+    if(!clientKey||!codeKey){ statusEl.textContent='⚠ Columns not found'; statusEl.className='upload-status error'; return; }
+    data9[which]=rows;
+    statusEl.textContent=`✓ ${rows.length.toLocaleString()} rows loaded`;
+    statusEl.className='upload-status';
+    zoneEl.classList.add('loaded');
+    renderPivot9(which,rows,clientKey,codeKey);
+  };
+  reader.readAsText(file);
+}
+
+function renderPivot9(which,rows,clientKey,codeKey){
+  const clients=new Set(), codes=new Set(), counts={};
+  rows.forEach(r=>{
+    const client=r[clientKey]||'null';
+    const code=r[codeKey]||'null';
+    clients.add(client); codes.add(code);
+    const k=`${client}::${code}`;
+    counts[k]=(counts[k]||0)+1;
+  });
+  const sortedClients=[...clients].sort();
+  const sortedCodes=[...codes].sort();
+  let html=`<table class="pivot-table"><thead><tr><th>Row Labels</th>`;
+  sortedCodes.forEach(c=>{html+=`<th>${c}</th>`;});
+  html+=`<th>Grand Total</th></tr></thead><tbody>`;
+  const colTotals={};
+  sortedCodes.forEach(c=>{colTotals[c]=0;});
+  let grand=0;
+  sortedClients.forEach(cl=>{
+    let rowTotal=0;
+    let row=`<tr><td>${cl}</td>`;
+    sortedCodes.forEach(c=>{
+      const v=counts[`${cl}::${c}`]||0;
+      colTotals[c]+=v; rowTotal+=v;
+      row+=`<td class="${v===0?'zero':'has-val'}">${v===0?'':v}</td>`;
+    });
+    grand+=rowTotal;
+    row+=`<td class="has-val">${rowTotal||''}</td></tr>`;
+    html+=row;
+  });
+  html+=`<tr class="grand-row"><td>Grand Total</td>`;
+  sortedCodes.forEach(c=>{html+=`<td>${colTotals[c]||''}</td>`;});
+  html+=`<td>${grand}</td></tr></tbody></table>`;
+  document.getElementById(`pivot-9${which}`).innerHTML=html;
+  data9[`${which}_pivot`]={sortedClients,sortedCodes,counts,colTotals,grand};
+}
+
+function buildScreenshot(prefix){
+  const which=prefix.replace('9','');
+  const pivot=data9[`${which}_pivot`];
+  if(!pivot){ showToast('Upload CSV first'); return; }
+  const {sortedClients,sortedCodes,counts,colTotals,grand}=pivot;
+  const reporter=document.getElementById(`${prefix}-reporter`).value||'—';
+  const status=statusMap[prefix]||'Normal';
+  const issue=document.getElementById(`${prefix}-issue`)?.value.trim()||'';
+  const statusStr=status==='Normal'?'Normal':(issue||'—');
+  const typeLabel=which==='mno'?'MNO':'IPTSP';
+  const fromDate=document.getElementById('9xxx-from-date').value;
+  const fromTime=document.getElementById('9xxx-from-time').value;
+  const toDate=document.getElementById('9xxx-to-date').value;
+  const toTime=document.getElementById('9xxx-to-time').value;
+  const period=`${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
+
+  let thCells=`<th style="text-align:left;">Count of a2pResponseCode</th><th colspan="${sortedCodes.length}" style="text-align:center;background:#DDE0EC;">Column Labels</th><th>Grand Total</th>`;
+  let th2Cells=`<th style="text-align:left;">Row Labels</th>`;
+  sortedCodes.forEach(c=>{th2Cells+=`<th>${c}</th>`;});
+  th2Cells+=`<th>Grand Total</th>`;
+
+  let bodyHTML='';
+  sortedClients.forEach(cl=>{
+    let rowTotal=0;
+    let row=`<tr><td>${esc(cl)}</td>`;
+    sortedCodes.forEach(c=>{
+      const v=counts[`${cl}::${c}`]||0;
+      rowTotal+=v;
+      row+=`<td class="${v===0?'zero':''}">${v===0?'':v}</td>`;
+    });
+    row+=`<td>${rowTotal||''}</td></tr>`;
+    bodyHTML+=row;
+  });
+  let footHTML=`<td style="text-align:left;">Grand Total</td>`;
+  sortedCodes.forEach(c=>{footHTML+=`<td>${colTotals[c]||''}</td>`;});
+  footHTML+=`<td>${grand}</td>`;
+
+  const statusCls=status==='Normal'?'sc-status-normal':'sc-status-issue';
+  document.getElementById(`sc-${prefix}`).innerHTML=`
+    <div class="sc-eyebrow">Infozillion Teletech BD · Service Assurance</div>
+    <div class="sc-title">9xxx Error Report — ${typeLabel}</div>
+    <div class="sc-time">${esc(period)}</div>
+    <table class="sc-table">
+      <thead><tr>${thCells}</tr><tr>${th2Cells}</tr></thead>
+      <tbody>${bodyHTML}</tbody>
+      <tfoot><tr class="sc-grand">${footHTML}</tr></tfoot>
+    </table>
+    <div class="sc-meta">
+      <div class="sc-meta-line"><strong>Reporter:</strong> ${esc(reporter)}</div>
+      <div class="sc-meta-line"><strong>Status &nbsp;:</strong> <span class="${statusCls}">${esc(statusStr)}</span></div>
+    </div>`;
+
+  const wrap=document.getElementById(`ss-${prefix}`);
+  wrap.classList.add('show');
+  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 1XXX
+// ═══════════════════════════════════════════════════════════════════
+const data1={mno:null,iptsp:null,mno_file:null,iptsp_file:null};
+
+function show1sub(which,el){
+  document.getElementById('1sub-mno').style.display   = which==='mno'?'block':'none';
+  document.getElementById('1sub-iptsp').style.display = which==='iptsp'?'block':'none';
+  document.getElementById('1sub-mno-btn').className   = which==='mno'?'btn btn--outline btn--sm':'btn btn--ghost btn--sm';
+  document.getElementById('1sub-iptsp-btn').className = which==='iptsp'?'btn btn--outline btn--sm':'btn btn--ghost btn--sm';
+}
+
+function parse1xxx(file,which){
+  if(!file) return;
+  data1[`${which}_file`]=file;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const rows=parseCSV(e.target.result);
+    const statusEl=document.getElementById(`status-1${which}`);
+    const zoneEl=document.getElementById(`zone-1${which}`);
+    const sample=rows[0]||{};
+    const clientKey=findKey(sample,['clientId','client_id','ClientId','client']);
+    const gwKey=findKey(sample,['applicableSmsGateway','applicablesmsgateway','smsGateway','gateway']);
+    const codeKey=findKey(sample,['ansResponseCode','ansresponsecode','ansResponsecode','ansResponse']);
+    if(!clientKey||!codeKey){ statusEl.textContent='⚠ Columns not found'; statusEl.className='upload-status error'; return; }
+    data1[which]=rows;
+    statusEl.textContent=`✓ ${rows.length.toLocaleString()} rows loaded`;
+    statusEl.className='upload-status';
+    zoneEl.classList.add('loaded');
+    renderPivot1(which,rows,clientKey,gwKey,codeKey);
+  };
+  reader.readAsText(file);
+}
+
+function renderPivot1(which,rows,clientKey,gwKey,codeKey){
+  const clients=new Set(), gwCodeCols=[], gwCodeSet=new Set(), gateways=new Set();
+  const counts={};
+  rows.forEach(r=>{
+    const client=r[clientKey]||'null';
+    const gw=gwKey?(r[gwKey]||'null'):'null';
+    const code=r[codeKey]||'null';
+    clients.add(client); gateways.add(gw);
+    const combo=`${gw}::${code}`;
+    if(!gwCodeSet.has(combo)){ gwCodeSet.add(combo); gwCodeCols.push({gw,code}); }
+    const k=`${client}::${gw}::${code}`;
+    counts[k]=(counts[k]||0)+1;
+  });
+  gwCodeCols.sort((a,b)=>a.gw.localeCompare(b.gw)||a.code.localeCompare(b.code));
+  const sortedClients=[...clients].sort();
+  const sortedGWs=[...new Set(gwCodeCols.map(x=>x.gw))];
+  const gwGroups={};
+  gwCodeCols.forEach(({gw})=>{gwGroups[gw]=(gwGroups[gw]||0)+1;});
+
+  let html=`<table class="pivot-table"><thead><tr><th rowspan="2">Row Labels</th>`;
+  sortedGWs.forEach(gw=>{html+=`<th colspan="${gwGroups[gw]+1}" style="text-align:center;border-bottom:1px solid var(--border-strong);">${gw}</th>`;});
+  html+=`<th rowspan="2">Grand Total</th></tr><tr>`;
+  sortedGWs.forEach(gw=>{
+    gwCodeCols.filter(x=>x.gw===gw).forEach(({code})=>{html+=`<th>${code}</th>`;});
+    html+=`<th>${gw} Total</th>`;
+  });
+  html+=`</tr></thead><tbody>`;
+
+  const colTotals={}, gwTotals={};
+  gwCodeCols.forEach(({gw,code})=>{colTotals[`${gw}::${code}`]=0;});
+  sortedGWs.forEach(gw=>{gwTotals[gw]=0;});
+  let grand=0;
+
+  sortedClients.forEach(cl=>{
+    let rowTotal=0;
+    let row=`<tr><td>${cl}</td>`;
+    sortedGWs.forEach(gw=>{
+      let gwRow=0;
+      gwCodeCols.filter(x=>x.gw===gw).forEach(({code})=>{
+        const v=counts[`${cl}::${gw}::${code}`]||0;
+        colTotals[`${gw}::${code}`]+=v; gwTotals[gw]+=v; gwRow+=v;
+        row+=`<td class="${v===0?'zero':'has-val'}">${v===0?'':v}</td>`;
+      });
+      rowTotal+=gwRow;
+      row+=`<td class="${gwRow===0?'zero':'has-val'}">${gwRow||''}</td>`;
+    });
+    grand+=rowTotal;
+    row+=`<td class="has-val">${rowTotal||''}</td></tr>`;
+    html+=row;
+  });
+  html+=`<tr class="grand-row"><td>Grand Total</td>`;
+  sortedGWs.forEach(gw=>{
+    gwCodeCols.filter(x=>x.gw===gw).forEach(({code})=>{html+=`<td>${colTotals[`${gw}::${code}`]||''}</td>`;});
+    html+=`<td>${gwTotals[gw]||''}</td>`;
+  });
+  html+=`<td>${grand}</td></tr></tbody></table>`;
+
+  document.getElementById(`pivot-1${which}`).innerHTML=html;
+  data1[`${which}_pivot`]={sortedClients,gwCodeCols,sortedGWs,gwGroups,counts,colTotals,gwTotals,grand};
+}
+
+function buildScreenshot1(prefix){
+  const which=prefix.replace('1','');
+  const pivot=data1[`${which}_pivot`];
+  if(!pivot){ showToast('Upload CSV first'); return; }
+  const {sortedClients,gwCodeCols,sortedGWs,gwGroups,counts,colTotals,gwTotals,grand}=pivot;
+  const reporter=document.getElementById(`${prefix}-reporter`).value||'—';
+  const status=statusMap[prefix]||'Normal';
+  const issue=document.getElementById(`${prefix}-issue`)?.value.trim()||'';
+  const statusStr=status==='Normal'?'Normal':(issue||'—');
+  const typeLabel=which==='mno'?'MNO':'IPTSP';
+  const fromDate=document.getElementById('1xxx-from-date').value;
+  const fromTime=document.getElementById('1xxx-from-time').value;
+  const toDate=document.getElementById('1xxx-to-date').value;
+  const toTime=document.getElementById('1xxx-to-time').value;
+  const period=`${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
+
+  let tableHtml=`<table class="sc-table"><thead><tr><th rowspan="2" style="text-align:left;">Count of ansResponseCode</th>`;
+  sortedGWs.forEach(gw=>{tableHtml+=`<th colspan="${gwGroups[gw]+1}" style="text-align:center;background:#DDE0EC;">${gw}</th>`;});
+  tableHtml+=`<th rowspan="2">Grand Total</th></tr><tr>`;
+  sortedGWs.forEach(gw=>{
+    gwCodeCols.filter(x=>x.gw===gw).forEach(({code})=>{tableHtml+=`<th>${code}</th>`;});
+    tableHtml+=`<th>${gw} Total</th>`;
+  });
+  tableHtml+=`</tr></thead><tbody>`;
+  sortedClients.forEach(cl=>{
+    let rowTotal=0;
+    let row=`<tr><td>${esc(cl)}</td>`;
+    sortedGWs.forEach(gw=>{
+      let gwRow=0;
+      gwCodeCols.filter(x=>x.gw===gw).forEach(({code})=>{
+        const v=counts[`${cl}::${gw}::${code}`]||0;
+        gwRow+=v; rowTotal+=v;
+        row+=`<td class="${v===0?'zero':''}">${v===0?'':v}</td>`;
+      });
+      row+=`<td>${gwRow||''}</td>`;
+    });
+    row+=`<td>${rowTotal||''}</td></tr>`;
+    tableHtml+=row;
+  });
+  tableHtml+=`<tr class="sc-grand"><td style="text-align:left;">Grand Total</td>`;
+  sortedGWs.forEach(gw=>{
+    gwCodeCols.filter(x=>x.gw===gw).forEach(({code})=>{tableHtml+=`<td>${colTotals[`${gw}::${code}`]||''}</td>`;});
+    tableHtml+=`<td>${gwTotals[gw]||''}</td>`;
+  });
+  tableHtml+=`<td>${grand}</td></tr></tbody></table>`;
+
+  const statusCls=status==='Normal'?'sc-status-normal':'sc-status-issue';
+  document.getElementById(`sc-${prefix}`).innerHTML=`
+    <div class="sc-eyebrow">Infozillion Teletech BD · Service Assurance</div>
+    <div class="sc-title">1xxx Error Report — ${typeLabel}</div>
+    <div class="sc-time">${esc(period)}</div>
+    ${tableHtml}
+    <div class="sc-meta">
+      <div class="sc-meta-line"><strong>Reporter:</strong> ${esc(reporter)}</div>
+      <div class="sc-meta-line"><strong>Status &nbsp;:</strong> <span class="${statusCls}">${esc(statusStr)}</span></div>
+    </div>`;
+
+  const wrap=document.getElementById(`ss-${prefix}`);
+  wrap.classList.add('show');
+  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 4XX / 5XX HTTP
+// ═══════════════════════════════════════════════════════════════════
+const HTTP_SOURCES=["GP","RB","BL","TT","ADN","FN","MN","BR","RT","AIT","MTN","PRM","RCO","BN","WBL","RDT","BOS","BTC","LNK","ICO","AGI","ICC"];
+const HTTP_CODES=["400","401","402","403","404","500","501","502","503","504"];
+
+function buildHTTPSources(){
+  const sl=document.getElementById('http-source-list');
+  HTTP_SOURCES.forEach(s=>{
+    const block=document.createElement('div');
+    block.className='src-block'; block.id=`src-${s}`;
+    const codesHtml=HTTP_CODES.map(c=>`
+      <div class="code-item">
+        <label>${c}</label>
+        <input class="field-input" type="number" id="hc-${s}-${c}" placeholder="0" min="0" oninput="updateHTTPTotal('${s}');refreshHTTP()">
+      </div>`).join('');
+    block.innerHTML=`
+      <div class="src-header" onclick="toggleSrc('${s}')">
+        <span class="src-name">${s}</span>
+        <span class="src-total">
+          <span id="htotal-${s}">—</span>
+          <span class="src-arrow">▼</span>
+        </span>
+      </div>
+      <div class="src-codes"><div class="codes-grid">${codesHtml}</div></div>`;
+    sl.appendChild(block);
+  });
+}
+
+function toggleSrc(s){
+  document.getElementById(`src-${s}`).classList.toggle('open');
+}
+
+function getHVal(s,c){
+  const v=parseInt(document.getElementById(`hc-${s}-${c}`).value);
+  return isNaN(v)?0:v;
+}
+
+function updateHTTPTotal(s){
+  const total=HTTP_CODES.reduce((sum,c)=>sum+getHVal(s,c),0);
+  const el=document.getElementById(`htotal-${s}`);
+  const block=document.getElementById(`src-${s}`);
+  if(total>0){
+    el.textContent=`${total} hits`;
+    block.classList.add('has-data');
+  } else {
+    el.textContent='—';
+    block.classList.remove('has-data');
+  }
+}
+
+function matchSource(ansType){
+  const val=(ansType||'').toLowerCase();
+  const tokens=val.split(/[-\/_ ]/);
+  const sorted=HTTP_SOURCES.slice().sort((a,b)=>b.length-a.length);
+  for(const src of sorted){
+    const s=src.toLowerCase();
+    if(tokens.some(t=>t===s||t.startsWith(s))) return src;
+  }
+  return null;
+}
+
+function parseHTTPcsv(file){
+  if(!file) return;
+  const statusEl=document.getElementById('status-http');
+  const zoneEl=document.getElementById('zone-http');
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const rows=parseCSV(e.target.result);
+    const sample=rows[0]||{};
+    const ansKey=findKey(sample,['ans_type','ansType','ans_Type']);
+    const evtKey=Object.keys(sample).find(k=>k.toLowerCase().includes('event'))||findKey(sample,['event.original','eventOriginal','event_original','original']);
+    if(!ansKey||!evtKey){ statusEl.textContent='⚠ Columns not found (need ans_type, event.original)'; statusEl.className='upload-status error'; return; }
+    const counts={};
+    HTTP_SOURCES.forEach(s=>{counts[s]={};});
+    rows.forEach(r=>{
+      const src=matchSource(r[ansKey]);
+      if(!src) return;
+      const evt=r[evtKey]||'';
+      const parts=evt.split(' ');
+      let code=null;
+      for(let i=0;i<parts.length;i++){
+        if(parts[i].startsWith('HTTP/')&&i+1<parts.length){
+          const c=parts[i+1];
+          if(c&&c.length===3&&!isNaN(c)){code=c;break;}
+        }
+      }
+      if(!code) return;
+      if(!HTTP_CODES.includes(code)) return;
+      counts[src][code]=(counts[src][code]||0)+1;
+    });
+    HTTP_SOURCES.forEach(s=>{
+      HTTP_CODES.forEach(c=>{
+        const el=document.getElementById(`hc-${s}-${c}`);
+        if(el){ const v=counts[s][c]||0; el.value=v>0?v:''; }
+      });
+      updateHTTPTotal(s);
+    });
+    statusEl.textContent=`✓ ${rows.length.toLocaleString()} rows parsed — sources auto-filled`;
+    statusEl.className='upload-status';
+    zoneEl.classList.add('loaded');
+    refreshHTTP();
+  };
+  reader.readAsText(file);
+}
+
+function buildHTTPReport(){
+  const fromDate=document.getElementById('http-from-date').value;
+  const fromTime=document.getElementById('http-from-time').value;
+  const toDate=document.getElementById('http-to-date').value;
+  const toTime=document.getElementById('http-to-time').value;
+  const reporter=document.getElementById('http-reporter').value||'—';
+  const status=statusMap['http']||'Normal';
+  const issue=document.getElementById('http-issue').value.trim();
+  const statusStr=status==='Normal'?'Normal':(issue||'—');
+  const period=`${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
+  const lines=HTTP_SOURCES.map(s=>{
+    const parts=[];
+    HTTP_CODES.forEach(c=>{const v=getHVal(s,c);if(v>0)parts.push(`${c}-${v}`);});
+    const total=parts.reduce((sum,p)=>sum+parseInt(p.split('-')[1]),0);
+    const padS=s.padEnd(5,' ');
+    return total===0?`${padS}: 0 hits`:`${padS}: ${total} hits (${parts.join(', ')})`;
+  });
+  return {period,srcLines:lines.join('\n'),reporter,statusStr,status};
+}
+
+function refreshHTTP(){
+  const r=buildHTTPReport();
+  const sc=document.getElementById('sc-http');
+  if(!sc) return;
+  const statusCls=r.status==='Normal'?'sc-status-normal':'sc-status-issue';
+  sc.innerHTML=`
+    <div class="sc-eyebrow">Infozillion Teletech BD · Service Assurance</div>
+    <div class="sc-title">4xx / 5xx HTTP Report</div>
+    <div class="sc-time">${esc(r.period)}</div>
+    <pre style="font-family:'DM Mono','Courier New',monospace;font-size:0.78rem;line-height:1.75;color:#1A1916;white-space:pre;margin-bottom:16px;">${esc(r.srcLines)}</pre>
+    <div class="sc-meta">
+      <div class="sc-meta-line"><strong>Reporter:</strong> ${esc(r.reporter)}</div>
+      <div class="sc-meta-line"><strong>Status &nbsp;:</strong> <span class="${statusCls}">${esc(r.statusStr)}</span></div>
+    </div>`;
+  const full=document.getElementById('http-full-text');
+  if(full) full.textContent=`${r.period}\n\`\`\`\n${r.srcLines}\n\`\`\`\nReporter: ${r.reporter}\nStatus  : ${r.statusStr}`;
 }
 
 function generateHTTP(){
   refreshHTTP();
-  const output = document.getElementById('http-output');
-  output.style.display = 'block';
-  setTimeout(() => output.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
+  const out=document.getElementById('http-output');
+  out.style.display='block';
+  setTimeout(()=>out.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 }
 
-function refreshHTTP(){
-  const r = buildHTTPReport();
-  const periodEl = document.getElementById('http-ss-period');
-  const reporterEl = document.getElementById('http-ss-reporter');
-  const statusEl = document.getElementById('http-ss-status');
-  const srcEl = document.getElementById('http-copy-text');
-  const fullEl = document.getElementById('http-full-text');
-  if(periodEl) periodEl.textContent = r.period;
-  if(srcEl) srcEl.textContent = r.srcLines;
-  if(fullEl) fullEl.textContent = `${r.period}\n\`\`\`\n${r.srcLines}\n\`\`\`\nReporter: ${r.reporter}\nStatus  : ${r.statusStr}`;
-  if(reporterEl) reporterEl.innerHTML = `<strong>Reporter:</strong> ${r.reporter}`;
-  if(statusEl){
-    const cls = (statusMap['http']||'Normal')==='Normal' ? 'ss-status-normal' : 'ss-status-issue';
-    statusEl.innerHTML = `<strong>Status:</strong> <span class="${cls}">${r.statusStr}</span>`;
-  }
-}
-refreshHTTP();
-
-
-// ── DLR ──
-const DLR_KNOWN = {
-  '1000': 'Success',
-  '1020': 'Internal Server Error',
-  '1052': 'Submission record not found'
-};
-// Dynamic store: key = statusCode string, value = count
-let dlrData = {};
+// ═══════════════════════════════════════════════════════════════════
+// DLR
+// ═══════════════════════════════════════════════════════════════════
+const DLR_KNOWN={'1000':'Success','1020':'Internal Server Error','1052':'Submission record not found'};
+let dlrData={};
 
 function parseDLR(file){
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const rows = parseCSV(e.target.result);
-    const statusEl = document.getElementById('status-dlr');
-    const sample = rows[0]||{};
-    const bodyKey = findKey(sample, ['message_body','messageBody','body','message_Body']);
-    if(!bodyKey){
-      statusEl.textContent = `⚠ message_body column not found`;
-      return;
-    }
-
-    dlrData = {};
-    rows.forEach(r => {
-      const body = r[bodyKey]||'';
-      const match = body.match(/statusCode=(\d+)/);
-      if(match){
-        const code = match[1];
-        dlrData[code] = (dlrData[code]||0) + 1;
-      }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const rows=parseCSV(e.target.result);
+    const statusEl=document.getElementById('status-dlr');
+    const sample=rows[0]||{};
+    const bodyKey=findKey(sample,['message_body','messageBody','body','message_Body']);
+    if(!bodyKey){ statusEl.textContent='⚠ message_body column not found'; statusEl.className='upload-status error'; return; }
+    dlrData={};
+    rows.forEach(r=>{
+      const body=r[bodyKey]||'';
+      const match=body.match(/statusCode=(\d+)/);
+      if(match){ const code=match[1]; dlrData[code]=(dlrData[code]||0)+1; }
     });
-
     renderDLRCounts();
-    statusEl.textContent = `✓ ${rows.length} rows parsed`;
+    statusEl.textContent=`✓ ${rows.length.toLocaleString()} rows parsed`;
+    statusEl.className='upload-status';
     document.getElementById('zone-dlr').classList.add('loaded');
   };
   reader.readAsText(file);
 }
 
 function renderDLRCounts(){
-  // Rebuild the counts display and manual override boxes dynamically
-  const countsBox = document.getElementById('dlr-counts-box');
-  const manualBox = document.getElementById('dlr-manual-box');
-
-  const allCodes = Object.keys(dlrData).sort();
-
-  // Counts display
-  countsBox.innerHTML = allCodes.map(code => `
-    <div class="dlr-val-box">
+  const countsBox=document.getElementById('dlr-counts-box');
+  const manualBox=document.getElementById('dlr-manual-box');
+  const allCodes=Object.keys(dlrData).sort();
+  countsBox.innerHTML=allCodes.map(code=>`
+    <div class="dlr-card">
       <div class="dlr-code">statusCode=${code}</div>
       <div class="dlr-count">${dlrData[code]}</div>
       <div class="dlr-label">${DLR_KNOWN[code]||'Unknown'}</div>
     </div>`).join('');
-
-  // Manual override
-  manualBox.innerHTML = `<div class="card-label">Manual Override (if needed)</div>
-    <div class="field-grid-3" style="margin-top:6px;">
-      ${allCodes.map(code => `
+  manualBox.innerHTML=`
+    <div style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:.75rem;">Manual Override</div>
+    <div class="field-grid-3">
+      ${allCodes.map(code=>`
         <div class="field-block">
           <label>${code}</label>
-          <input type="number" id="dlr-m-${code}" value="${dlrData[code]}" min="0" oninput="updateDLRManual('${code}')">
+          <input class="field-input" type="number" id="dlr-m-${code}" value="${dlrData[code]}" min="0" oninput="updateDLRManual('${code}')">
         </div>`).join('')}
     </div>`;
 }
 
 function updateDLRManual(code){
-  const v = parseInt(document.getElementById(`dlr-m-${code}`).value)||0;
-  dlrData[code] = v;
-  // Update count display if element exists
-  const countsBox = document.getElementById('dlr-counts-box');
-  const countEl = countsBox.querySelectorAll('.dlr-count');
-  const allCodes = Object.keys(dlrData).sort();
-  const idx = allCodes.indexOf(code);
-  if(countEl[idx]) countEl[idx].textContent = v;
+  const v=parseInt(document.getElementById(`dlr-m-${code}`).value)||0;
+  dlrData[code]=v;
+  const countsBox=document.getElementById('dlr-counts-box');
+  const allCodes=Object.keys(dlrData).sort();
+  const countEls=countsBox.querySelectorAll('.dlr-count');
+  const idx=allCodes.indexOf(code);
+  if(countEls[idx]) countEls[idx].textContent=v;
 }
 
 function buildDLRScreenshot(){
-  const fromDate = document.getElementById('dlr-from-date').value;
-  const fromTime = document.getElementById('dlr-from-time').value;
-  const toDate   = document.getElementById('dlr-to-date').value;
-  const toTime   = document.getElementById('dlr-to-time').value;
-  const reporter = document.getElementById('dlr-reporter').value||'—';
-  const status   = statusMap['dlr']||'Normal';
-  const issue    = document.getElementById('dlr-issue').value.trim();
-  const statusStr= status==='Normal'?'Normal':(issue||'—');
-  const period   = `${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
-  const statusClass = status==='Normal'?'ss-status-normal':'ss-status-issue';
+  const fromDate=document.getElementById('dlr-from-date').value;
+  const fromTime=document.getElementById('dlr-from-time').value;
+  const toDate=document.getElementById('dlr-to-date').value;
+  const toTime=document.getElementById('dlr-to-time').value;
+  const reporter=document.getElementById('dlr-reporter').value||'—';
+  const status=statusMap['dlr']||'Normal';
+  const issue=document.getElementById('dlr-issue').value.trim();
+  const statusStr=status==='Normal'?'Normal':(issue||'—');
+  const period=`${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
+  const statusCls=status==='Normal'?'sc-status-normal':'sc-status-issue';
+  const allCodes=Object.keys(dlrData).sort();
+  const rows=allCodes.length>0
+    ?allCodes.map(code=>`<tr><td>${code}</td><td style="text-align:left;">${DLR_KNOWN[code]||'—'}</td><td>${dlrData[code]||''}</td></tr>`).join('')
+    :`<tr><td colspan="3" style="text-align:center;color:#CCC;">No data</td></tr>`;
 
-  const allCodes = Object.keys(dlrData).sort();
-
-  const rows = allCodes.length > 0
-    ? allCodes.map(code => `
-        <tr>
-          <td>${code}</td>
-          <td style="text-align:left;">${DLR_KNOWN[code]||'—'}</td>
-          <td>${dlrData[code]||''}</td>
-        </tr>`).join('')
-    : `<tr><td colspan="3" style="text-align:center;color:#aaa;">No data</td></tr>`;
-
-  const tableHtml = `
-    <table class="ss-table">
-      <thead>
-        <tr>
-          <th style="text-align:left;">Status Code</th>
-          <th style="text-align:left;">Error Description</th>
-          <th>Count</th>
-        </tr>
-      </thead>
+  document.getElementById('sc-dlr').innerHTML=`
+    <div class="sc-eyebrow">Infozillion Teletech BD · Service Assurance</div>
+    <div class="sc-title">DLR Report</div>
+    <div class="sc-time">${esc(period)}</div>
+    <table class="sc-table" style="margin-bottom:16px;">
+      <thead><tr>
+        <th style="text-align:left;">Status Code</th>
+        <th style="text-align:left;">Error Description</th>
+        <th>Count</th>
+      </tr></thead>
       <tbody>${rows}</tbody>
-    </table>`;
-
-  const ssEl = document.getElementById('ss-dlr');
-  ssEl.innerHTML = `
-    <div class="ss-inner" id="ss-inner-dlr">
-      <div class="ss-header">
-        <div>
-          <div class="ss-title">DLR Report</div>
-          <div class="ss-meta">${period}</div>
-        </div>
-      </div>
-      ${tableHtml}
-      <div class="ss-footer">
-        <div><strong>Reporter:</strong> ${reporter}</div>
-        <div><strong>Status:</strong> <span class="${statusClass}">${statusStr}</span></div>
-      </div>
-    </div>
-    <div class="ss-actions">
-      <button class="btn-copy-img" onclick="copyAsImage('ss-inner-dlr', this)">📋 Copy as Image</button>
-      <button class="btn-copy-img" onclick="copyReportText('DLR','${period.replace(/'/g,"\\'")}','${reporter}','${statusStr}', this)">📄 Copy Text</button>
+    </table>
+    <div class="sc-meta">
+      <div class="sc-meta-line"><strong>Reporter:</strong> ${esc(reporter)}</div>
+      <div class="sc-meta-line"><strong>Status &nbsp;:</strong> <span class="${statusCls}">${esc(statusStr)}</span></div>
     </div>`;
 
-  ssEl.classList.add('show');
-  setTimeout(() => ssEl.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
+  const wrap=document.getElementById('ss-dlr');
+  wrap.classList.add('show');
+  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 }
 
-
-// ── Copy text 9xxx ──
-function copyText9(which){
-  const pivot = data9[`${which}_pivot`];
-  if(!pivot){ alert('No data yet'); return; }
-  const { sortedClients, sortedCodes, counts, colTotals, grandTotal } = pivot;
-  const prefix = `9${which}`;
-  const reporter = document.getElementById(`${prefix}-reporter`).value||'—';
-  const status = statusMap[prefix]||'Normal';
-  const issue = document.getElementById(`${prefix}-issue`)?.value.trim()||'';
-  const statusStr = status==='Normal'?'Normal':(issue||'—');
-  const fromDate = document.getElementById('9xxx-from-date').value;
-  const fromTime = document.getElementById('9xxx-from-time').value;
-  const toDate   = document.getElementById('9xxx-to-date').value;
-  const toTime   = document.getElementById('9xxx-to-time').value;
-  const period   = `${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
-  const typeLabel = which==='mno'?'MNO':'IPTSP';
-
-  // Build monospace table
-  const colW = 8;
-  let header = 'clientId'.padEnd(24);
-  sortedCodes.forEach(c=>{ header += c.padStart(colW); });
-  header += 'Total'.padStart(colW);
-  const sep = '-'.repeat(header.length);
-
-  let rows = sortedClients.map(cl => {
-    let row = cl.padEnd(24);
-    let total=0;
-    sortedCodes.forEach(c=>{ const v=counts[`${cl}::${c}`]||0; total+=v; row+=String(v||'').padStart(colW); });
-    row += String(total).padStart(colW);
-    return row;
-  }).join('\n');
-
-  let gtRow = 'Grand Total'.padEnd(24);
-  sortedCodes.forEach(c=>{ gtRow+=String(colTotals[c]||'').padStart(colW); });
-  gtRow += String(grandTotal).padStart(colW);
-
-  const text = `9xxx Report — ${typeLabel}\n${period}\n\n${header}\n${sep}\n${rows}\n${sep}\n${gtRow}\n\nReporter: ${reporter}\nStatus  : ${statusStr}`;
-  navigator.clipboard.writeText(text).then(()=>alert('Copied!')).catch(()=>{ prompt('Copy this:', text); });
-}
-
-function copyText1(which){
-  const pivot = data1[`${which}_pivot`];
-  if(!pivot){ alert('No data yet'); return; }
-  const prefix = `1${which}`;
-  const reporter = document.getElementById(`${prefix}-reporter`).value||'—';
-  const status = statusMap[prefix]||'Normal';
-  const issue = document.getElementById(`${prefix}-issue`)?.value.trim()||'';
-  const statusStr = status==='Normal'?'Normal':(issue||'—');
-  const fromDate = document.getElementById('1xxx-from-date').value;
-  const fromTime = document.getElementById('1xxx-from-time').value;
-  const toDate   = document.getElementById('1xxx-to-date').value;
-  const toTime   = document.getElementById('1xxx-to-time').value;
-  const period   = `${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
-  const typeLabel = which==='mno'?'MNO':'IPTSP';
-
-  const { sortedClients, gwCodeCols, sortedGWs, counts, gwTotals, grandTotal } = pivot;
-
-  let lines = [`1xxx Report — ${typeLabel}`, period, ''];
-  sortedGWs.forEach(gw => {
-    const gwCodes = gwCodeCols.filter(x=>x.gw===gw);
-    lines.push(`[ ${gw} ]`);
-    let header = 'clientId'.padEnd(24) + gwCodes.map(({code})=>code.padStart(8)).join('') + '  Total';
-    lines.push(header);
-    lines.push('-'.repeat(header.length));
-    sortedClients.forEach(cl => {
-      let row = cl.padEnd(24); let t=0;
-      gwCodes.forEach(({code}) => { const v=counts[`${cl}::${gw}::${code}`]||0; t+=v; row+=String(v||'').padStart(8); });
-      row += String(t).padStart(8);
-      lines.push(row);
-    });
-    lines.push(`Grand Total`.padEnd(24) + gwCodes.map(({gw:g,code})=>{
-      return String(pivot.colTotals[`${g}::${code}`]||'').padStart(8);
-    }).join('') + String(gwTotals[gw]).padStart(8));
-    lines.push('');
-  });
-  lines.push(`Reporter: ${reporter}`);
-  lines.push(`Status  : ${statusStr}`);
-
-  const text = lines.join('\n');
-  navigator.clipboard.writeText(text).then(()=>alert('Copied!')).catch(()=>{ prompt('Copy this:', text); });
-}
-
-// ── Generic copy ──
-function doCopy(id, btn){
-  const text = document.getElementById(id).textContent;
+function copyDLRText(btn){
+  const fromDate=document.getElementById('dlr-from-date').value;
+  const fromTime=document.getElementById('dlr-from-time').value;
+  const toDate=document.getElementById('dlr-to-date').value;
+  const toTime=document.getElementById('dlr-to-time').value;
+  const reporter=document.getElementById('dlr-reporter').value||'—';
+  const status=statusMap['dlr']||'Normal';
+  const issue=document.getElementById('dlr-issue').value.trim();
+  const statusStr=status==='Normal'?'Normal':(issue||'—');
+  const period=`${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
+  const lines=Object.keys(dlrData).sort().map(code=>`${code}: ${dlrData[code]}`).join('\n');
+  const text=`DLR,\n${period}\n\n${lines}\n\nReporter: ${reporter}\nStatus  : ${statusStr}`;
   navigator.clipboard.writeText(text).then(()=>{
-    const orig = btn.textContent;
-    btn.textContent = 'Copied ✓';
-    setTimeout(()=>{ btn.textContent=orig; }, 2000);
+    const orig=btn.textContent; btn.textContent='Copied ✓';
+    setTimeout(()=>btn.textContent=orig,2000);
   });
 }
 
-// ── Auto-refresh HTTP preview on field changes ──
-['http-from-date','http-from-time','http-to-date','http-to-time','http-reporter','http-issue'].forEach(id=>{
-  const el = document.getElementById(id);
-  if(el) el.addEventListener('input', () => {
-    // Only refresh if output already visible
-    const output = document.getElementById('http-output');
-    if(output && output.style.display !== 'none') refreshHTTP();
+// ═══════════════════════════════════════════════════════════════════
+// DELAY REPORT
+// ═══════════════════════════════════════════════════════════════════
+const DELAY_THRESHOLD=1;
+const OP_ORDER=['GrameenPhone','Robi','Banglalink','Teletalk'];
+const OP_CLASS={GrameenPhone:'gp',Robi:'robi',Banglalink:'bl',Teletalk:'tt'};
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let delayState={data:null,timeRange:{min:null,max:null}};
+
+function initDelay(){
+  const dropZone=document.getElementById('delay-dropZone');
+  const fileInput=document.getElementById('delay-fileInput');
+  const browseBtn=document.getElementById('delay-browseBtn');
+
+  browseBtn.addEventListener('click',e=>{e.stopPropagation();fileInput.click();});
+  dropZone.addEventListener('click',e=>{if(e.target.closest('button'))return;fileInput.click();});
+  dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+  dropZone.addEventListener('dragleave',e=>{if(!dropZone.contains(e.relatedTarget))dropZone.classList.remove('drag-over');});
+  dropZone.addEventListener('drop',e=>{
+    e.preventDefault();dropZone.classList.remove('drag-over');
+    const file=e.dataTransfer.files[0];if(file)handleDelayFile(file);
   });
-});
-// ── Renamed CSV Download ──
+  fileInput.addEventListener('change',()=>{if(fileInput.files[0])handleDelayFile(fileInput.files[0]);fileInput.value='';});
+  document.getElementById('delay-resetBtn').addEventListener('click',resetDelay);
+  document.getElementById('delay-generateBtn').addEventListener('click',generateDelayCard);
+  document.getElementById('delay-copyImgBtn').addEventListener('click',()=>captureDelayCard(false));
+  document.getElementById('delay-downloadImgBtn').addEventListener('click',()=>captureDelayCard(true));
+  document.getElementById('delay-fStatus').addEventListener('change',function(){
+    document.getElementById('delay-fIssueGroup').style.display=this.value==='Issue'?'flex':'none';
+  });
+  document.getElementById('delay-copyTableBtn').addEventListener('click',()=>{
+    if(delayState.data)copyDelayTable(delayState.data);
+  });
+  document.getElementById('delay-exportCsvBtn').addEventListener('click',()=>{
+    if(delayState.data)exportDelayCSV(delayState.data);
+  });
+  initDelayDatetimes();
+}
+
+function initDelayDatetimes(){
+  const n=new Date();
+  const from=new Date(n);from.setHours(from.getHours()-2);
+  document.getElementById('delay-fFrom').value=toDatetimeLocal(from);
+  document.getElementById('delay-fTo').value=toDatetimeLocal(n);
+}
+
+function toDatetimeLocal(d){
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function showDelayScreen(which){
+  document.getElementById('delay-screen-upload').style.display=which==='upload'?'block':'none';
+  document.getElementById('delay-screen-loading').style.display=which==='loading'?'block':'none';
+  const res=document.getElementById('delay-results');
+  if(which==='results'){res.classList.add('show');}else{res.classList.remove('show');}
+}
+
+function setDelayLoading(label,pct){
+  document.getElementById('delay-loadingLabel').textContent=label;
+  document.getElementById('delay-loadingFill').style.width=Math.min(pct,100)+'%';
+}
+
+function handleDelayFile(file){
+  if(!file.name.toLowerCase().endsWith('.csv')){showToast('Please select a .csv file');return;}
+  showDelayScreen('loading');setDelayLoading('Reading file…',10);
+  const reader=new FileReader();
+  reader.onprogress=e=>{if(e.lengthComputable)setDelayLoading('Reading file…',(e.loaded/e.total)*40);};
+  reader.onload=e=>{
+    setTimeout(()=>{
+      try{
+        setDelayLoading('Parsing CSV…',50);
+        const rows=parseDelayCSV(e.target.result);
+        setDelayLoading(`Computing delays for ${rows.length.toLocaleString()} rows…`,70);
+        setTimeout(()=>{
+          const data=computeDelayData(rows);
+          delayState.data=data;
+          setDelayLoading('Rendering report…',90);
+          setTimeout(()=>{
+            renderDelayResults(data,file.name,rows.length);
+            setDelayLoading('Done',100);
+            setTimeout(()=>showDelayScreen('results'),150);
+          },80);
+        },40);
+      }catch(err){showDelayScreen('upload');showToast('Error: '+err.message);}
+    },30);
+  };
+  reader.onerror=()=>{showDelayScreen('upload');showToast('Could not read file');};
+  reader.readAsText(file,'UTF-8');
+}
+
+function parseDelayCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim().length>0);
+  if(lines.length<2)throw new Error('File has no data rows');
+  const delim=lines[0].includes('\t')?'\t':',';
+  const headers=splitCSVLine(lines[0],delim).map(h=>h.replace(/^["']|["']$/g,'').trim().toLowerCase().replace(/[^a-z0-9]/g,''));
+  const col={
+    ts:   headers.findIndex(h=>['timestamp','time'].some(c=>h===c||h===('@'+c))),
+    req:  headers.findIndex(h=>['ansrequesttime','ansrequesttime','requesttime'].includes(h)),
+    res:  headers.findIndex(h=>['ansresponsetime','ansresponsetime','responsetime'].includes(h)),
+    op:   headers.findIndex(h=>['applicablesmsgateway','applicablesmsgatewaykeyword','operator','gateway'].includes(h)),
+  };
+  if(col.req===-1)throw new Error('Column "ansRequestTime" not found');
+  if(col.res===-1)throw new Error('Column "ansResponseTime" not found');
+  if(col.op===-1)throw new Error('Column "applicableSmsGateway" not found');
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    const cells=splitCSVLine(lines[i],delim).map(c=>c.trim());
+    rows.push({ts:col.ts!==-1?cells[col.ts]:'',request:cells[col.req]||'',response:cells[col.res]||'',operator:cells[col.op]||'(blank)'});
+  }
+  return rows;
+}
+
+function parseISODate(str){
+  if(!str)return null;
+  const d=new Date(str.replace(' ','T'));
+  return isNaN(d.getTime())?null:d;
+}
+
+function parseTimestamp(str){
+  if(!str)return null;
+  const cleaned=str.replace(' @ ','T').replace(/\.\d{3}$/,'');
+  let d=new Date(cleaned);
+  if(!isNaN(d.getTime()))return d;
+  d=new Date(str);
+  return isNaN(d.getTime())?null:d;
+}
+
+function computeDelayData(rows){
+  const operatorSet=new Set();
+  let tsMin=null,tsMax=null;
+  const pivot={},opTotals={},delayTotals={};
+  let grand=0;
+  for(const row of rows){
+    const op=row.operator||'(blank)';
+    const req=parseISODate(row.request);
+    const res=parseISODate(row.response);
+    operatorSet.add(op);
+    const ts=row.ts?parseTimestamp(row.ts):null;
+    if(ts){if(!tsMin||ts<tsMin)tsMin=ts;if(!tsMax||ts>tsMax)tsMax=ts;}
+    if(!req||!res)continue;
+    const delaySec=(res.getTime()-req.getTime())/1000;
+    const delayInt=Math.round(delaySec);
+    if(!tsMin||req<tsMin)tsMin=req;if(!tsMax||res>tsMax)tsMax=res;
+    if(!pivot[delayInt])pivot[delayInt]={};
+    pivot[delayInt][op]=(pivot[delayInt][op]||0)+1;
+    opTotals[op]=(opTotals[op]||0)+1;
+    delayTotals[delayInt]=(delayTotals[delayInt]||0)+1;
+    grand++;
+  }
+  const allOps=[...operatorSet];
+  const opArr=[...OP_ORDER.filter(o=>allOps.includes(o)),...allOps.filter(o=>!OP_ORDER.includes(o)).sort()];
+  const delayKeys=Object.keys(pivot).map(Number).sort((a,b)=>a-b);
+  return{pivot,opArr,opTotals,delayTotals,delayKeys,grand,tsMin,tsMax};
+}
+
+function renderDelayResults(data,fileName,rowCount){
+  const{pivot,opArr,opTotals,delayTotals,delayKeys,grand,tsMin,tsMax}=data;
+
+  document.getElementById('delay-resultsMeta').textContent=`${fileName} · ${rowCount.toLocaleString()} rows · ${grand.toLocaleString()} computed`;
+
+  const tr=document.getElementById('delay-timeRange');
+  if(tsMin&&tsMax){
+    tr.innerHTML=`<span><strong>From</strong> ${formatDT(tsMin)}</span><span><strong>To</strong> ${formatDT(tsMax)}</span><span><strong>Duration</strong> ${formatDuration(tsMax-tsMin)}</span>`;
+    document.getElementById('delay-fFrom').value=toDatetimeLocal(tsMin);
+    document.getElementById('delay-fTo').value=toDatetimeLocal(tsMax);
+    document.getElementById('delay-fromHint').textContent='from CSV';
+    document.getElementById('delay-toHint').textContent='from CSV';
+    delayState.timeRange={min:tsMin,max:tsMax};
+  } else {
+    tr.innerHTML=`<span><strong>Time range</strong> not detected — enter manually below</span>`;
+  }
+
+  // Pivot table
+  const thead=document.querySelector('#delay-pivotTable thead');
+  const tbody=document.querySelector('#delay-pivotTable tbody');
+  const tfoot=document.querySelector('#delay-pivotTable tfoot');
+  thead.innerHTML=`<tr><th>Delay (s)</th>${opArr.map(op=>`<th>${op}</th>`).join('')}<th>Total</th></tr>`;
+  tbody.innerHTML=delayKeys.map(d=>{
+    const isDelayed=d>=DELAY_THRESHOLD;
+    return `<tr><td style="${isDelayed?'color:var(--warn);font-weight:600;':''}">${d}</td>${opArr.map(op=>{
+      const v=pivot[d][op]||0;
+      return `<td class="${v===0?'zero':''}${isDelayed&&v>0?' rc-td-delayed':''}">${v===0?'':v}</td>`;
+    }).join('')}<td>${delayTotals[d]||''}</td></tr>`;
+  }).join('');
+  tfoot.innerHTML=`<tr class="grand-row"><td>Grand Total</td>${opArr.map(op=>`<td>${opTotals[op]||0}</td>`).join('')}<td>${grand}</td></tr>`;
+
+  // Op cards
+  const cards=document.getElementById('delay-opCards');
+  const withTotal=[...opArr,null];
+  cards.innerHTML=withTotal.map(op=>{
+    if(op===null){
+      const delayed=Object.entries(opTotals).reduce((s,[,v])=>s+v,0)-delayKeys.filter(d=>d<DELAY_THRESHOLD).reduce((s,d)=>s+(delayTotals[d]||0),0);
+      const total=grand;
+      const pct=total>0?Math.round(delayed/total*100):0;
+      return `<div class="op-card c-total">
+        <div class="op-card__name">All Operators</div>
+        <div class="op-card__total">${total.toLocaleString()}</div>
+        <div class="op-card__delayed">${delayed>0?`<span class="d-num">${delayed.toLocaleString()}</span> <span class="d-pct">delayed (${pct}%)</span>`:`<span class="d-none">No delays</span>`}</div>
+      </div>`;
+    }
+    const total=opTotals[op]||0;
+    const delayed=delayKeys.filter(d=>d>=DELAY_THRESHOLD).reduce((s,d)=>s+(pivot[d][op]||0),0);
+    const pct=total>0?Math.round(delayed/total*100):0;
+    const cls=OP_CLASS[op]||'';
+    return `<div class="op-card ${cls?'c-'+cls:''}">
+      <div class="op-card__name">${op}</div>
+      <div class="op-card__total">${total.toLocaleString()}</div>
+      <div class="op-card__delayed">${delayed>0?`<span class="d-num">${delayed.toLocaleString()}</span> <span class="d-pct">delayed (${pct}%)</span>`:`<span class="d-none">No delays</span>`}</div>
+    </div>`;
+  }).join('');
+}
+
+function formatDT(d){const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;}
+function formatDuration(ms){const s=Math.round(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);if(h>0)return`${h}h ${m%60}m`;if(m>0)return`${m}m ${s%60}s`;return`${s}s`;}
+function formatCardDT(d){const p=(n,l=2)=>String(n).padStart(l,'0');return `${MONTHS[d.getMonth()]} ${p(d.getDate())}, ${d.getFullYear()} @ ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}.000`;}
+
+function generateDelayCard(){
+  if(!delayState.data){showToast('No data loaded');return;}
+  const{pivot,opArr,opTotals,delayTotals,delayKeys,grand}=delayState.data;
+  const reportType=document.getElementById('delay-fReportType').value||'Delay Report';
+  const reporter=document.getElementById('delay-fReporter').value||'—';
+  const status=document.getElementById('delay-fStatus').value;
+  const issueText=document.getElementById('delay-fIssue').value.trim();
+  const fromVal=document.getElementById('delay-fFrom').value;
+  const toVal=document.getElementById('delay-fTo').value;
+  const fromStr=fromVal?formatCardDT(new Date(fromVal)):'—';
+  const toStr=toVal?formatCardDT(new Date(toVal)):'—';
+
+  // Build operator column headers with color tops
+  const opClassMap={GrameenPhone:'rc-th-gp',Robi:'rc-th-robi',Banglalink:'rc-th-bl',Teletalk:'rc-th-tt'};
+  let thCells=`<th style="text-align:left;">Count of delay</th>`;
+  opArr.forEach(op=>{thCells+=`<th class="${opClassMap[op]||'rc-th-blank'}">${op}</th>`;});
+  thCells+=`<th class="rc-th-grand">Grand Total</th>`;
+
+  let bodyHTML='';
+  delayKeys.forEach(d=>{
+    const isDelayed=d>=DELAY_THRESHOLD;
+    let row=`<tr><td style="text-align:left;${isDelayed?'color:#B84E1A;font-weight:600;':''}">${d}</td>`;
+    opArr.forEach(op=>{
+      const v=pivot[d][op]||0;
+      row+=`<td class="${v===0?'rc-td-zero':'rc-td-total'}${isDelayed&&v>0?' rc-td-delayed':''}">${v===0?'':v}</td>`;
+    });
+    row+=`<td class="rc-td-total">${delayTotals[d]||''}</td></tr>`;
+    bodyHTML+=row;
+  });
+
+  let footHTML=`<td style="text-align:left">Grand Total</td>`;
+  opArr.forEach(op=>{footHTML+=`<td>${(opTotals[op]||0).toLocaleString()}</td>`;});
+  footHTML+=`<td>${grand.toLocaleString()}</td>`;
+
+  const statusHTML=status==='Normal'
+    ?`<span class="rc-status-normal">Normal</span>`
+    :`<span class="rc-status-issue">Issue</span>${issueText?` — <span class="rc-issue-text">${esc(issueText)}</span>`:''}`;
+
+  document.getElementById('delay-reportCard').innerHTML=`
+    <div class="rc-eyebrow">Infozillion Teletech BD · Service Assurance</div>
+    <div class="rc-title">${esc(reportType)}</div>
+    <div class="rc-time">${esc(fromStr)} &mdash; ${esc(toStr)}</div>
+    <table class="rc-table">
+      <thead><tr>${thCells}</tr></thead>
+      <tbody>${bodyHTML}</tbody>
+      <tfoot><tr>${footHTML}</tr></tfoot>
+    </table>
+    <div class="rc-meta">
+      <div class="rc-meta-line"><strong>Reporter:</strong> ${esc(reporter)}</div>
+      <div class="rc-meta-line"><strong>Status:</strong> ${statusHTML}</div>
+    </div>`;
+
+  const preview=document.getElementById('delay-cardPreview');
+  preview.style.display='block';
+  setTimeout(()=>preview.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+async function captureDelayCard(download){
+  const card=document.getElementById('delay-reportCard');
+  if(!card.innerHTML.trim()){showToast('Generate a card first');return;}
+  showToast('Generating image…');
+  const fullW=card.scrollWidth,fullH=card.scrollHeight;
+  card.style.setProperty('width',fullW+'px','important');
+  card.style.setProperty('height',fullH+'px','important');
+  card.style.setProperty('overflow','visible','important');
+  card.style.setProperty('max-width','none','important');
+  await new Promise(r=>setTimeout(r,80));
+  const w=card.offsetWidth,h=card.offsetHeight;
+  const restore=()=>{card.style.removeProperty('width');card.style.removeProperty('height');card.style.removeProperty('overflow');card.style.removeProperty('max-width');};
+  try{
+    const canvas=await html2canvas(card,{backgroundColor:'#FFFFFF',scale:2.5,useCORS:true,logging:false,width:w,height:h,windowWidth:w+200,windowHeight:h+200,x:0,y:0,scrollX:0,scrollY:0});
+    restore();
+    if(download){
+      const a=document.createElement('a');a.href=canvas.toDataURL('image/png');
+      a.download=`delay_report_${formatFileDate(new Date())}.png`;a.click();
+      showToast('Downloaded ✓');
+    } else {
+      canvas.toBlob(async blob=>{
+        try{await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);showToast('Copied! Paste in WhatsApp ✓');}
+        catch{const url=URL.createObjectURL(blob);window.open(url,'_blank');showToast('Opened in new tab');}
+      },'image/png');
+    }
+  }catch(err){restore();showToast('Capture failed: '+err.message);}
+}
+
+function copyDelayTable({pivot,delayKeys,opArr,opTotals,delayTotals,grand}){
+  const rows=[['Count of delay',...opArr,'Grand Total'].join('\t')];
+  for(const d of delayKeys){const cells=[d];for(const op of opArr)cells.push(pivot[d][op]||0);cells.push(delayTotals[d]||0);rows.push(cells.join('\t'));}
+  const ft=['Grand Total'];for(const op of opArr)ft.push(opTotals[op]||0);ft.push(grand);rows.push(ft.join('\t'));
+  navigator.clipboard.writeText(rows.join('\n')).then(()=>showToast('Table copied — paste into Excel')).catch(()=>showToast('Copy failed'));
+}
+
+function exportDelayCSV({pivot,delayKeys,opArr,opTotals,delayTotals,grand}){
+  const rows=[['Count of delay',...opArr,'Grand Total'].join(',')];
+  for(const d of delayKeys){const cells=[d];for(const op of opArr)cells.push(pivot[d][op]||0);cells.push(delayTotals[d]||0);rows.push(cells.join(','));}
+  const ft=['Grand Total'];for(const op of opArr)ft.push(opTotals[op]||0);ft.push(grand);rows.push(ft.join(','));
+  const blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`delay_report_${formatFileDate(new Date())}.csv`;a.click();
+  showToast('CSV exported');
+}
+
+function resetDelay(){
+  delayState={data:null,timeRange:{min:null,max:null}};
+  document.getElementById('delay-cardPreview').style.display='none';
+  document.getElementById('delay-reportCard').innerHTML='';
+  initDelayDatetimes();
+  document.getElementById('delay-fromHint').textContent='auto from CSV';
+  document.getElementById('delay-toHint').textContent='auto from CSV';
+  showDelayScreen('upload');
+}
+
+// Delay report card styles (inline for report card)
+const rcStyles=`
+.rc-eyebrow{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:#999;margin-bottom:4px;font-family:'DM Mono',monospace;}
+.rc-title{font-family:'Instrument Serif',serif;font-size:1.5rem;font-weight:400;color:#1A1916;letter-spacing:-.01em;margin-bottom:4px;}
+.rc-time{font-size:.72rem;color:#888;margin-bottom:22px;font-family:'DM Mono',monospace;}
+.rc-table{border-collapse:collapse;width:100%;margin-bottom:20px;font-size:.78rem;font-family:'DM Mono',monospace;}
+.rc-table thead tr:first-child th{background:#EEF0F5;padding:8px 14px;text-align:right;font-weight:600;color:#1A1916;border:1px solid #D0D4DE;white-space:nowrap;}
+.rc-table thead tr:first-child th:first-child{text-align:left;}
+.rc-th-gp{border-top:3px solid #0074B7!important}
+.rc-th-robi{border-top:3px solid #C0392B!important}
+.rc-th-bl{border-top:3px solid #D35400!important}
+.rc-th-tt{border-top:3px solid #27AE60!important}
+.rc-th-blank{border-top:3px solid #999!important}
+.rc-table tbody tr:nth-child(odd) td{background:#FFFFFF}
+.rc-table tbody tr:nth-child(even) td{background:#F9FAFB}
+.rc-table tbody td{padding:7px 14px;border:1px solid #D0D4DE;text-align:right;color:#1A1916;}
+.rc-table tbody td:first-child{text-align:left;font-weight:600;background:#EEF0F5!important;}
+.rc-td-zero{color:#CCC!important}
+.rc-td-delayed{color:#B84E1A!important;font-weight:600}
+.rc-td-total{font-weight:600}
+.rc-table tfoot td{background:#EEF0F5!important;padding:8px 14px;border:1px solid #C0C4CE;border-top:2px solid #A0A4AE;font-weight:700;color:#1A1916;text-align:right;}
+.rc-table tfoot td:first-child{text-align:left;}
+.rc-meta{margin-top:6px;}
+.rc-meta-line{font-size:.78rem;line-height:1.9;color:#1A1916;font-family:'DM Mono',monospace;}
+.rc-meta-line strong{font-weight:600}
+.rc-status-normal{color:#1A6B3C;font-weight:600}
+.rc-status-issue{color:#B84E1A;font-weight:600}
+.rc-issue-text{color:#B84E1A}
+`;
+const styleTag=document.createElement('style');
+styleTag.textContent=rcStyles;
+document.head.appendChild(styleTag);
+
+// ═══════════════════════════════════════════════════════════════════
+// DRIVE BACKUP
+// ═══════════════════════════════════════════════════════════════════
+function buildFileName(errorType,ansType,fromDate,fromTime){
+  if(!fromDate)return`${errorType}_${ansType}_unknown.csv`;
+  const d=fromDate.replace(/-/g,'');
+  const h=(fromTime||'00:00').split(':')[0].padStart(2,'0');
+  return`${errorType}_${ansType}_${d}_${h}.csv`;
+}
+
+function downloadRenamedCSV(file,fileName){
+  if(!file)return;
+  const url=URL.createObjectURL(file);
+  const a=document.createElement('a');
+  a.href=url;a.download=fileName;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
 function downloadReport9(which){
-  const file = data9[`${which}_file`];
-  if(!file){ alert('No file found'); return; }
-  const fromDate = document.getElementById('9xxx-from-date').value;
-  const fromTime = document.getElementById('9xxx-from-time').value;
-  const ansType = which === 'mno' ? 'M' : 'I';
-  const fileName = buildFileName('X9', ansType, fromDate, fromTime);
-  downloadRenamedCSV(file, fileName);
+  const file=data9[`${which}_file`];
+  if(!file){showToast('No file uploaded');return;}
+  const fromDate=document.getElementById('9xxx-from-date').value;
+  const fromTime=document.getElementById('9xxx-from-time').value;
+  downloadRenamedCSV(file,buildFileName('X9',which==='mno'?'M':'I',fromDate,fromTime));
 }
 
 function downloadReport1(which){
-  const file = data1[`${which}_file`];
-  if(!file){ alert('No file found'); return; }
-  const fromDate = document.getElementById('1xxx-from-date').value;
-  const fromTime = document.getElementById('1xxx-from-time').value;
-  const ansType = which === 'mno' ? 'M' : 'I';
-  const fileName = buildFileName('X1', ansType, fromDate, fromTime);
-  downloadRenamedCSV(file, fileName);
+  const file=data1[`${which}_file`];
+  if(!file){showToast('No file uploaded');return;}
+  const fromDate=document.getElementById('1xxx-from-date').value;
+  const fromTime=document.getElementById('1xxx-from-time').value;
+  downloadRenamedCSV(file,buildFileName('X1',which==='mno'?'M':'I',fromDate,fromTime));
 }
 
-function buildFileName(errorType, ansType, fromDate, fromTime){
-  // errorType: 'X9' or 'X1', ansType: 'M' or 'I'
-  // fromDate: '2026-01-31', fromTime: '00:00'
-  if(!fromDate) return `${errorType}_${ansType}_unknown.csv`;
-  const d = fromDate.replace(/-/g,''); // 20260131
-  const h = (fromTime||'00:00').split(':')[0].padStart(2,'0'); // 00
-  return `${errorType}_${ansType}_${d}_${h}.csv`;
-}
-
-function downloadRenamedCSV(file, fileName){
-  if(!file) return;
-  const url = URL.createObjectURL(file);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-// ── Save Files Tab ──
-function refreshSaveFiles(){
-  const fromDate9 = document.getElementById('9xxx-from-date').value;
-  const fromTime9 = document.getElementById('9xxx-from-time').value;
-  const fromDate1 = document.getElementById('1xxx-from-date').value;
-  const fromTime1 = document.getElementById('1xxx-from-time').value;
-
-  const files = [
-    { key: 'X9_M', file: data9['mno_file'],   name: buildFileName('X9','M', fromDate9, fromTime9), label: '9xxx MNO' },
-    { key: 'X9_I', file: data9['iptsp_file'],  name: buildFileName('X9','I', fromDate9, fromTime9), label: '9xxx IPTSP' },
-    { key: 'X1_M', file: data1['mno_file'],    name: buildFileName('X1','M', fromDate1, fromTime1), label: '1xxx MNO' },
-    { key: 'X1_I', file: data1['iptsp_file'],  name: buildFileName('X1','I', fromDate1, fromTime1), label: '1xxx IPTSP' },
+function refreshBackup(){
+  const fromDate9=document.getElementById('9xxx-from-date').value;
+  const fromTime9=document.getElementById('9xxx-from-time').value;
+  const fromDate1=document.getElementById('1xxx-from-date').value;
+  const fromTime1=document.getElementById('1xxx-from-time').value;
+  const files=[
+    {file:data9['mno_file'],  name:buildFileName('X9','M',fromDate9,fromTime9),label:'9xxx MNO'},
+    {file:data9['iptsp_file'],name:buildFileName('X9','I',fromDate9,fromTime9),label:'9xxx IPTSP'},
+    {file:data1['mno_file'],  name:buildFileName('X1','M',fromDate1,fromTime1),label:'1xxx MNO'},
+    {file:data1['iptsp_file'],name:buildFileName('X1','I',fromDate1,fromTime1),label:'1xxx IPTSP'},
   ];
-
-  const list = document.getElementById('save-file-list');
-  list.innerHTML = files.map(f => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+  const list=document.getElementById('save-file-list');
+  list.innerHTML=files.map((f,i)=>`
+    <div class="file-status-row">
       <div>
-        <div style="font-family:var(--mono);font-size:12px;color:var(--text);">${f.name}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px;">${f.label} · ${f.file ? '<span style="color:var(--accent);">Ready</span>' : '<span style="color:var(--text3);">No file uploaded</span>'}</div>
+        <div class="file-status-name">${f.name}</div>
+        <div class="file-status-label">${f.label} · ${f.file?'<span class="file-status-ready">Ready</span>':'Not uploaded'}</div>
       </div>
-      ${f.file ? `<button class="btn-copy-img" onclick="downloadRenamedCSV(${f.key.includes('9')?'data9':'data1'}['${f.key.includes('M')?'mno':'iptsp'}_file'], '${f.name}')">⬇</button>` : ''}
+      ${f.file?`<button class="btn btn--outline btn--sm" onclick="${i<2?'downloadReport9':'downloadReport1'}('${i%2===0?'mno':'iptsp'}')">⬇</button>`:''}
     </div>`).join('');
 }
 
 function downloadAllFiles(){
-  const fromDate9 = document.getElementById('9xxx-from-date').value;
-  const fromTime9 = document.getElementById('9xxx-from-time').value;
-  const fromDate1 = document.getElementById('1xxx-from-date').value;
-  const fromTime1 = document.getElementById('1xxx-from-time').value;
-
-  const files = [
-    { file: data9['mno_file'],  name: buildFileName('X9','M', fromDate9, fromTime9) },
-    { file: data9['iptsp_file'],name: buildFileName('X9','I', fromDate9, fromTime9) },
-    { file: data1['mno_file'],  name: buildFileName('X1','M', fromDate1, fromTime1) },
-    { file: data1['iptsp_file'],name: buildFileName('X1','I', fromDate1, fromTime1) },
+  const fromDate9=document.getElementById('9xxx-from-date').value;
+  const fromTime9=document.getElementById('9xxx-from-time').value;
+  const fromDate1=document.getElementById('1xxx-from-date').value;
+  const fromTime1=document.getElementById('1xxx-from-time').value;
+  const files=[
+    {file:data9['mno_file'],  name:buildFileName('X9','M',fromDate9,fromTime9)},
+    {file:data9['iptsp_file'],name:buildFileName('X9','I',fromDate9,fromTime9)},
+    {file:data1['mno_file'],  name:buildFileName('X1','M',fromDate1,fromTime1)},
+    {file:data1['iptsp_file'],name:buildFileName('X1','I',fromDate1,fromTime1)},
   ];
+  const available=files.filter(f=>f.file);
+  if(available.length===0){showToast('No files uploaded yet');return;}
+  available.forEach((f,i)=>setTimeout(()=>downloadRenamedCSV(f.file,f.name),i*400));
+  showToast(`Downloading ${available.length} file(s)…`);
+}
 
-  const available = files.filter(f => f.file);
-  if(available.length === 0){ alert('No files uploaded yet.'); return; }
+// ═══════════════════════════════════════════════════════════════════
+// RESET ALL
+// ═══════════════════════════════════════════════════════════════════
+function resetAll(btn){
+  if(!confirm('Reset all data? This will clear all uploaded files, form fields, and generated reports.'))return;
 
-  available.forEach((f, i) => {
-    setTimeout(() => downloadRenamedCSV(f.file, f.name), i * 400);
+  // 9xxx
+  ['mno','iptsp'].forEach(w=>{
+    data9[w]=null;data9[`${w}_file`]=null;data9[`${w}_pivot`]=null;
+    const s=document.getElementById(`status-9${w}`);if(s){s.textContent='';s.className='upload-status';}
+    document.getElementById(`zone-9${w}`).classList.remove('loaded');
+    document.getElementById(`pivot-9${w}`).innerHTML=`<div class="no-data">Upload ${w.toUpperCase()} CSV to generate pivot table</div>`;
+    document.getElementById(`ss-9${w}`).classList.remove('show');
   });
+  // 1xxx
+  ['mno','iptsp'].forEach(w=>{
+    data1[w]=null;data1[`${w}_file`]=null;data1[`${w}_pivot`]=null;
+    const s=document.getElementById(`status-1${w}`);if(s){s.textContent='';s.className='upload-status';}
+    document.getElementById(`zone-1${w}`).classList.remove('loaded');
+    document.getElementById(`pivot-1${w}`).innerHTML=`<div class="no-data">Upload ${w.toUpperCase()} CSV to generate pivot table</div>`;
+    document.getElementById(`ss-1${w}`).classList.remove('show');
+  });
+  // HTTP
+  HTTP_SOURCES.forEach(s=>{
+    HTTP_CODES.forEach(c=>{const el=document.getElementById(`hc-${s}-${c}`);if(el)el.value='';});
+    const block=document.getElementById(`src-${s}`);
+    if(block){block.classList.remove('has-data','open');}
+    const totalEl=document.getElementById(`htotal-${s}`);
+    if(totalEl){totalEl.textContent='—';}
+  });
+  const httpZone=document.getElementById('zone-http');if(httpZone)httpZone.classList.remove('loaded');
+  const httpStatus=document.getElementById('status-http');if(httpStatus){httpStatus.textContent='';httpStatus.className='upload-status';}
+  document.getElementById('http-output').style.display='none';
+  // DLR
+  dlrData={};
+  document.getElementById('zone-dlr').classList.remove('loaded');
+  const dlrStatus=document.getElementById('status-dlr');if(dlrStatus){dlrStatus.textContent='';dlrStatus.className='upload-status';}
+  document.getElementById('dlr-counts-box').innerHTML='';
+  document.getElementById('dlr-manual-box').innerHTML='';
+  document.getElementById('ss-dlr').classList.remove('show');
+  // Delay
+  resetDelay();
+  // Datetimes
+  ['9xxx','1xxx','http','dlr'].forEach(p=>initDT(p));
+  // Statuses
+  ['9mno','9iptsp','1mno','1iptsp','http','dlr'].forEach(p=>{
+    statusMap[p]='Normal';
+    const bn=document.getElementById(`${p}-btn-n`);if(bn)bn.className='st-btn normal-on';
+    const bi=document.getElementById(`${p}-btn-i`);if(bi)bi.className='st-btn';
+    const box=document.getElementById(`${p}-issue-box`);if(box)box.style.display='none';
+    const rep=document.getElementById(`${p}-reporter`);if(rep)rep.value='Rizvi';
+  });
+  // File inputs
+  document.querySelectorAll('input[type=file]').forEach(f=>{f.value='';});
+  // Backup
+  const list=document.getElementById('save-file-list');if(list)list.innerHTML='';
+
+  const orig=btn.textContent;btn.textContent='Done ✓';
+  setTimeout(()=>{btn.textContent=orig;},2000);
 }
 
-// ── Copy report caption text ──
-function copyReportText(typeLabel, period, reporter, statusStr, btn) {
-  const text = `${typeLabel},\n${period}\n\nReporter: ${reporter}\nStatus  : ${statusStr}`;
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.textContent;
-    btn.textContent = '✓ Copied!';
-    setTimeout(() => { btn.textContent = orig; }, 2000);
-  }).catch(() => { prompt('Copy this:', text); });
-}
-
-// ── Copy as Image ──
-async function copyAsImage(innerId, btn) {
-  const el = document.getElementById(innerId);
-  if (!el) return;
-  const orig = btn.textContent;
-  btn.textContent = 'Generating…';
-  btn.disabled = true;
-  try {
-    // Remove overflow clipping temporarily from all ancestor screenshot-cards
-    const card = el.closest('.screenshot-card');
-    if(card){
-      card.style.overflow = 'visible';
-      card.style.maxHeight = 'none';
-    }
-
-    // Let browser reflow
-    await new Promise(r => setTimeout(r, 50));
-
-    const canvas = await html2canvas(el, {
-      backgroundColor: '#ffffff',
-      scale: 3,
-      useCORS: true,
-      logging: false,
-    });
-
-    if(card){ card.style.overflow = ''; card.style.maxHeight = ''; }
-
-    canvas.toBlob(async blob => {
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
-        btn.textContent = '✓ Image Copied!';
-      } catch (err) {
-        const url = canvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'report-table.png';
-        a.click();
-        btn.textContent = '✓ Downloaded!';
-      }
-      setTimeout(() => {
-        btn.textContent = orig;
-        btn.disabled = false;
-      }, 2500);
-    }, 'image/png');
-  } catch (err) {
-    btn.textContent = 'Error — try again';
-    btn.disabled = false;
-  }
-}
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  ['9xxx','1xxx','http','dlr'].forEach(p=>initDT(p));
+  buildHTTPSources();
+  refreshHTTP();
+  initDelay();
+});
