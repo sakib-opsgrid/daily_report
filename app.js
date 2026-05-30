@@ -47,6 +47,40 @@ function fmtDT(dateVal, timeVal){
 
 function fmtTimeNow(){ const n=new Date(); return `${pad(n.getHours())}:${pad(n.getMinutes())}`; }
 
+// ── AUTO DATE FROM CSV ────────────────────────────────────────────
+function extractDateRange(rows){
+  // Find timestamp key
+  const sample=rows[0]||{};
+  const tsKey=Object.keys(sample).find(k=>{
+    const kl=k.toLowerCase().replace(/[^a-z]/g,'');
+    return kl==='timestamp'||kl==='atimestamp'||kl==='time';
+  });
+  if(!tsKey) return null;
+  let min=null,max=null;
+  rows.forEach(r=>{
+    const raw=r[tsKey];
+    if(!raw) return;
+    // Handle "May 21, 2026 @ 18:36:02.158" and ISO formats
+    const cleaned=raw.replace(' @ ','T').replace(/\.\d+$/,'');
+    const d=new Date(cleaned);
+    if(isNaN(d.getTime())) return;
+    if(!min||d<min) min=d;
+    if(!max||d>max) max=d;
+  });
+  if(!min||!max) return null;
+  return {min,max};
+}
+
+function applyDateRange(prefix,range){
+  if(!range) return;
+  const toDate=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const toTime=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  document.getElementById(`${prefix}-from-date`).value=toDate(range.min);
+  document.getElementById(`${prefix}-from-time`).value=toTime(range.min);
+  document.getElementById(`${prefix}-to-date`).value=toDate(range.max);
+  document.getElementById(`${prefix}-to-time`).value=toTime(range.max);
+}
+
 // ── CSV PARSER ────────────────────────────────────────────────────
 function parseCSV(text){
   const lines = text.split(/\r?\n/).filter(Boolean);
@@ -230,6 +264,7 @@ function parse9xxx(file,which){
     statusEl.className='upload-status';
     zoneEl.classList.add('loaded');
     renderPivot9(which,rows,clientKey,codeKey);
+    applyDateRange('9xxx',extractDateRange(rows));
   };
   reader.readAsText(file);
 }
@@ -357,6 +392,7 @@ function parse1xxx(file,which){
     statusEl.className='upload-status';
     zoneEl.classList.add('loaded');
     renderPivot1(which,rows,clientKey,gwKey,codeKey);
+    applyDateRange('1xxx',extractDateRange(rows));
   };
   reader.readAsText(file);
 }
@@ -582,6 +618,7 @@ function parseHTTPcsv(file){
       });
       updateHTTPTotal(s);
     });
+    applyDateRange('http',extractDateRange(rows));
     statusEl.textContent=`✓ ${rows.length.toLocaleString()} rows parsed — sources auto-filled`;
     statusEl.className='upload-status';
     zoneEl.classList.add('loaded');
@@ -657,6 +694,7 @@ function parseDLR(file){
       if(match){ const code=match[1]; dlrData[code]=(dlrData[code]||0)+1; }
     });
     renderDLRCounts();
+    applyDateRange('dlr',extractDateRange(rows));
     statusEl.textContent=`✓ ${rows.length.toLocaleString()} rows parsed`;
     statusEl.className='upload-status';
     document.getElementById('zone-dlr').classList.add('loaded');
