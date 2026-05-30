@@ -50,9 +50,10 @@ function fmtTimeNow(){ const n=new Date(); return `${pad(n.getHours())}:${pad(n.
 // ── AUTO DATE FROM CSV ────────────────────────────────────────────
 function extractDateRange(rows){
   const sample=rows[0]||{};
+  // Find timestamp key — handles @timestamp, timestamp, time, @time
   const tsKey=Object.keys(sample).find(k=>{
     const kl=k.toLowerCase().replace(/[^a-z]/g,'');
-    return kl==='timestamp'||kl==='atimestamp'||kl==='time';
+    return kl==='timestamp'||kl==='time';
   });
   if(!tsKey) return null;
   let min=null,max=null;
