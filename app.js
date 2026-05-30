@@ -49,7 +49,6 @@ function fmtTimeNow(){ const n=new Date(); return `${pad(n.getHours())}:${pad(n.
 
 // ── AUTO DATE FROM CSV ────────────────────────────────────────────
 function extractDateRange(rows){
-  // Find timestamp key
   const sample=rows[0]||{};
   const tsKey=Object.keys(sample).find(k=>{
     const kl=k.toLowerCase().replace(/[^a-z]/g,'');
@@ -57,13 +56,27 @@ function extractDateRange(rows){
   });
   if(!tsKey) return null;
   let min=null,max=null;
+  const MONTHS={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+
   rows.forEach(r=>{
-    const raw=r[tsKey];
+    const raw=(r[tsKey]||'').trim();
     if(!raw) return;
-    // Handle "May 21, 2026 @ 18:36:02.158" and ISO formats
-    const cleaned=raw.replace(' @ ','T').replace(/\.\d+$/,'');
-    const d=new Date(cleaned);
-    if(isNaN(d.getTime())) return;
+    let d=null;
+
+    // ELK format: "May 24, 2026 @ 01:50:05.324"
+    const elkM=raw.match(/^([A-Za-z]{3})\s+(\d{1,2}),\s+(\d{4})\s+@\s+(\d{2}):(\d{2}):(\d{2})/);
+    if(elkM){
+      const mo=MONTHS[elkM[1]];
+      if(mo!==undefined){
+        d=new Date(+elkM[3],mo,+elkM[2],+elkM[4],+elkM[5],+elkM[6]);
+      }
+    }
+    // ISO / other formats
+    if(!d||isNaN(d.getTime())){
+      const cleaned=raw.replace(' @ ','T').replace(/\.\d+$/,'');
+      d=new Date(cleaned);
+    }
+    if(!d||isNaN(d.getTime())) return;
     if(!min||d<min) min=d;
     if(!max||d>max) max=d;
   });
