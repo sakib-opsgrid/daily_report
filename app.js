@@ -795,8 +795,7 @@ function copyDLRText(btn){
   const issue=document.getElementById('dlr-issue').value.trim();
   const statusStr=status==='Normal'?'Normal':(issue||'—');
   const period=`${fmtDT(fromDate,fromTime)} - ${fmtDT(toDate,toTime)}`;
-  const lines=Object.keys(dlrData).sort().map(code=>`${code}: ${dlrData[code]}`).join('\n');
-  const text=`DLR,\n${period}\n\n${lines}\n\nReporter: ${reporter}\nStatus  : ${statusStr}`;
+  const text=`DLR,\n${period}\n\nReporter: ${reporter}\nStatus  : ${statusStr}`;
   navigator.clipboard.writeText(text).then(()=>{
     const orig=btn.textContent; btn.textContent='Copied ✓';
     setTimeout(()=>btn.textContent=orig,2000);
