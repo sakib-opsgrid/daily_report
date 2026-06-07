@@ -98,9 +98,9 @@
   </div>
 
   <!-- Sub tabs -->
-  <div style="display:flex;gap:6px;margin-bottom:1rem;">
-    <button class="btn btn--outline btn--sm" id="9sub-mno-btn" onclick="show9sub('mno',this)" style="font-family:var(--font-mono);letter-spacing:.04em;">MNO Table</button>
-    <button class="btn btn--ghost btn--sm" id="9sub-iptsp-btn" onclick="show9sub('iptsp',this)" style="font-family:var(--font-mono);letter-spacing:.04em;">IPTSP Table</button>
+  <div class="seg-control">
+    <button class="seg-btn seg-btn--active" id="9sub-mno-btn" onclick="show9sub('mno',this)">MNO</button>
+    <button class="seg-btn" id="9sub-iptsp-btn" onclick="show9sub('iptsp',this)">IPTSP</button>
   </div>
 
   <div id="9sub-mno">
@@ -109,7 +109,7 @@
       <div class="card-header"><span class="card-title">Report Info — MNO</span></div>
       <div class="card-body">
         <div class="field-stack">
-          <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="9mno-reporter" placeholder="Name" value="Rizvi"></div>
+          <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="9mno-reporter" placeholder="e.g. Name"></div>
           <div class="field-block"><label>Status</label>
             <div class="status-row">
               <button class="st-btn normal-on" id="9mno-btn-n" onclick="setSt('9mno','Normal')">Normal</button>
@@ -143,7 +143,7 @@
       <div class="card-header"><span class="card-title">Report Info — IPTSP</span></div>
       <div class="card-body">
         <div class="field-stack">
-          <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="9iptsp-reporter" placeholder="Name" value="Rizvi"></div>
+          <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="9iptsp-reporter" placeholder="e.g. Name"></div>
           <div class="field-block"><label>Status</label>
             <div class="status-row">
               <button class="st-btn normal-on" id="9iptsp-btn-n" onclick="setSt('9iptsp','Normal')">Normal</button>
@@ -223,9 +223,9 @@
     </div>
   </div>
 
-  <div style="display:flex;gap:6px;margin-bottom:1rem;">
-    <button class="btn btn--outline btn--sm" id="1sub-mno-btn" onclick="show1sub('mno',this)" style="font-family:var(--font-mono);letter-spacing:.04em;">MNO Table</button>
-    <button class="btn btn--ghost btn--sm" id="1sub-iptsp-btn" onclick="show1sub('iptsp',this)" style="font-family:var(--font-mono);letter-spacing:.04em;">IPTSP Table</button>
+  <div class="seg-control">
+    <button class="seg-btn seg-btn--active" id="1sub-mno-btn" onclick="show1sub('mno',this)">MNO</button>
+    <button class="seg-btn" id="1sub-iptsp-btn" onclick="show1sub('iptsp',this)">IPTSP</button>
   </div>
 
   <div id="1sub-mno">
@@ -234,7 +234,7 @@
       <div class="card-header"><span class="card-title">Report Info — MNO</span></div>
       <div class="card-body">
         <div class="field-stack">
-          <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="1mno-reporter" placeholder="Name" value="Rizvi"></div>
+          <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="1mno-reporter" placeholder="e.g. Name"></div>
           <div class="field-block"><label>Status</label>
             <div class="status-row">
               <button class="st-btn normal-on" id="1mno-btn-n" onclick="setSt('1mno','Normal')">Normal</button>
@@ -268,7 +268,7 @@
       <div class="card-header"><span class="card-title">Report Info — IPTSP</span></div>
       <div class="card-body">
         <div class="field-stack">
-          <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="1iptsp-reporter" placeholder="Name" value="Rizvi"></div>
+          <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="1iptsp-reporter" placeholder="e.g. Name"></div>
           <div class="field-block"><label>Status</label>
             <div class="status-row">
               <button class="st-btn normal-on" id="1iptsp-btn-n" onclick="setSt('1iptsp','Normal')">Normal</button>
@@ -343,7 +343,7 @@
     <div class="card-header"><span class="card-title">Report Info</span></div>
     <div class="card-body">
       <div class="field-stack">
-        <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="http-reporter" placeholder="Name" value="Rizvi"></div>
+        <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="http-reporter" placeholder="e.g. Name"></div>
         <div class="field-block"><label>Status</label>
           <div class="status-row">
             <button class="st-btn normal-on" id="http-btn-n" onclick="setSt('http','Normal')">Normal</button>
@@ -412,7 +412,7 @@
     <div class="card-header"><span class="card-title">Report Info</span></div>
     <div class="card-body">
       <div class="field-stack">
-        <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="dlr-reporter" placeholder="Name" value="Rizvi"></div>
+        <div class="field-block"><label>Prepared By</label><input class="field-input" type="text" id="dlr-reporter" placeholder="e.g. Name"></div>
         <div class="field-block"><label>Status</label>
           <div class="status-row">
             <button class="st-btn normal-on" id="dlr-btn-n" onclick="setSt('dlr','Normal')">Normal</button>

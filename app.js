@@ -257,8 +257,8 @@ const data9={mno:null,iptsp:null,mno_file:null,iptsp_file:null};
 function show9sub(which,el){
   document.getElementById('9sub-mno').style.display   = which==='mno'?'block':'none';
   document.getElementById('9sub-iptsp').style.display = which==='iptsp'?'block':'none';
-  document.getElementById('9sub-mno-btn').className   = which==='mno'?'btn btn--outline btn--sm':'btn btn--ghost btn--sm';
-  document.getElementById('9sub-iptsp-btn').className = which==='iptsp'?'btn btn--outline btn--sm':'btn btn--ghost btn--sm';
+  document.getElementById('9sub-mno-btn').className   = which==='mno'?'seg-btn seg-btn--active':'seg-btn';
+  document.getElementById('9sub-iptsp-btn').className = which==='iptsp'?'seg-btn seg-btn--active':'seg-btn';
 }
 
 function parse9xxx(file,which){
@@ -384,8 +384,8 @@ const data1={mno:null,iptsp:null,mno_file:null,iptsp_file:null};
 function show1sub(which,el){
   document.getElementById('1sub-mno').style.display   = which==='mno'?'block':'none';
   document.getElementById('1sub-iptsp').style.display = which==='iptsp'?'block':'none';
-  document.getElementById('1sub-mno-btn').className   = which==='mno'?'btn btn--outline btn--sm':'btn btn--ghost btn--sm';
-  document.getElementById('1sub-iptsp-btn').className = which==='iptsp'?'btn btn--outline btn--sm':'btn btn--ghost btn--sm';
+  document.getElementById('1sub-mno-btn').className   = which==='mno'?'seg-btn seg-btn--active':'seg-btn';
+  document.getElementById('1sub-iptsp-btn').className = which==='iptsp'?'seg-btn seg-btn--active':'seg-btn';
 }
 
 function parse1xxx(file,which){

@@ -813,3 +813,35 @@ code {
   .header-clock { display: none; }
   .screenshot-card, .delay-report-card { min-width: unset; width: 100%; }
 }
+
+/* ── SEGMENTED CONTROL (MNO / IPTSP toggle) ─────────────────── */
+.seg-control {
+  display: inline-flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 1.25rem;
+}
+.seg-btn {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.seg-btn:hover { color: var(--text-secondary); background: var(--bg); }
+.seg-btn--active {
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(26,25,22,.1);
+}
