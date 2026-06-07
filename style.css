@@ -142,10 +142,19 @@ code {
 .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
 
 /* ── CONTENT ─────────────────────────────────────────────────── */
-.tab-panel { display: none; }
-.tab-panel.active { display: block; animation: screenIn 0.3s var(--ease); }
-@keyframes screenIn {
-  from { opacity: 0; transform: translateY(8px); }
+/* ── TAB TRANSITIONS ─────────────────────────────────────────── */
+.tab-panel {
+  display: none;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.tab-panel.active {
+  display: block;
+  animation: tabIn 0.28s var(--ease) forwards;
+}
+@keyframes tabIn {
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
