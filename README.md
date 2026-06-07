@@ -1,8 +1,11 @@
 # Service Assurance — Shift Report Tool
-**Infozillion Teletech Bd Ltd**  
-*© 2026 Nickson Rizvi (Najmaz Sakib)*
 
-A browser-based shift reporting tool for the Service Assurance team. Parses ELK Discover CSV exports, generates pivot tables and report cards, and produces WhatsApp-ready images — entirely in the browser, no installation required.
+**Infozillion Teletech Bd Ltd**  
+*Built by Najmaz Sakib · Service Assurance Team*
+
+---
+
+A browser-based shift reporting tool that parses ELK Discover CSV exports, generates pivot tables and report cards, and produces WhatsApp-ready images — entirely in the browser, no installation or internet connection required after first load.
 
 ---
 
@@ -24,132 +27,123 @@ All four files must be in the **same folder**. Open `index.html` in any modern b
 
 | Tab | Purpose |
 |---|---|
-| 9xxx Report | A2P response error pivot table (MNO & IPTSP) |
-| 1xxx Report | SMS answer response error pivot table (MNO & IPTSP) |
-| 4xx/5xx Report | HTTP error hits by source operator (GP → ICC) |
-| DLR Report | Delivery report status code counts |
-| Delay Report | Per-operator SMS response delay distribution |
-| Drive Backup | Download renamed CSVs for Google Drive backup |
+| **9xxx Report** | A2P response error pivot table — MNO & IPTSP |
+| **1xxx Report** | SMS answer response error pivot table — MNO & IPTSP |
+| **4xx/5xx Report** | HTTP error hits by source operator (GP → ICC) |
+| **DLR Report** | Delivery report status code counts |
+| **Delay Report** | Per-operator SMS response delay distribution |
+| **Drive Backup** | Download renamed CSVs for Google Drive |
 
 ---
 
 ## Reports
 
-### 1. 9xxx Error Report
-- Upload separate CSVs for **MNO** and **IPTSP**
-- Required columns: `clientId`, `a2pResponseCode`
-- Generates: **clientId × a2pResponseCode** pivot table
-- Output: **Copy Image** · **Download PNG** · **Copy Text**
+### 9xxx Error Report
 
-### 2. 1xxx Error Report
-- Upload separate CSVs for **MNO** and **IPTSP**
-- Required columns: `clientId`, `applicableSmsGateway`, `ansResponseCode`
-- Generates: **clientId × Gateway × ansResponseCode** grouped pivot table
-- Output: **Copy Image** · **Download PNG** · **Copy Text**
+Tracks A2P response errors in the 9xxx range.
 
-### 3. 4xx / 5xx HTTP Report
-- Optional CSV upload auto-fills all source hits
-- Required columns: `ans_type`, `event.original`
-- `ans_type` matched by token — `rt/txn` → RT, `bl-proxy` → BL, `mtn-proxy` → MTN
-- Manual entry also available
-- Output: formatted preview → **Copy Text** (WhatsApp code-block aligned)
+**CSV columns required:** `clientId`, `a2pResponseCode`
 
-### 4. DLR Report
+- Upload separate CSVs for MNO and IPTSP using the segmented toggle
+- Monitoring window auto-filled from `@timestamp` column on upload
+- Generates a **clientId × a2pResponseCode** pivot table with Grand Total
+- Output → **Generate Report Card** → Copy Image · Download PNG · Copy Text
+
+---
+
+### 1xxx Error Report
+
+Tracks SMS answer response errors in the 1xxx range.
+
+**CSV columns required:** `clientId`, `applicableSmsGateway`, `ansResponseCode`
+
+- Upload separate CSVs for MNO and IPTSP using the segmented toggle
+- Monitoring window auto-filled from `@timestamp` column on upload
+- Generates a **clientId × Gateway × ansResponseCode** grouped pivot with subtotals
+- Output → **Generate Report Card** → Copy Image · Download PNG · Copy Text
+
+---
+
+### 4xx / 5xx HTTP Report
+
+Tracks HTTP error hits across all source operators.
+
+**CSV columns required (optional upload):** `ans_type`, `event.original`
+
+- CSV upload auto-fills all source hit counts — manual entry also available
+- `ans_type` matched to source by token: `rt/txn` → RT, `bl-proxy` → BL, `mtn-proxy` → MTN
+- HTTP code extracted from nginx log line inside `event.original`
+- Monitoring window auto-filled from `@timestamp` on upload
+- Sources with data highlighted automatically
+- Output → **Generate for WhatsApp** → Copy Text (code-block aligned)
+
+---
+
+### DLR Report
+
+Tracks delivery report status code counts.
+
+**CSV column required:** `message_body`
+
 - Upload CSV or enter counts manually
-- Required column: `message_body` (scans for `statusCode=XXXX`)
-- All status codes detected automatically
-- Output: **Copy Image** · **Download PNG** · **Copy Text**
+- All `statusCode=XXXX` values detected automatically from `message_body`
+- Monitoring window auto-filled from `@timestamp` on upload
+- Output → **Generate Report Card** → Copy Image · Download PNG · Copy Text
 
 | Status Code | Description |
 |---|---|
 | 1000 | Success |
 | 1020 | Internal Server Error |
 | 1052 | Submission record not found |
-| others | Displayed as — |
-
-### 5. Delay Report
-- Upload Kibana / ELK Discover CSV
-- Required columns: `ansRequestTime`, `ansResponseTime`, `applicableSmsGateway`
-- Optional: `@timestamp` for time range auto-detection
-- Computes: `Delay (s) = ansResponseTime − ansRequestTime` (rounded to nearest second)
-- Shows: delay distribution pivot table · operator summary cards
-- Output: **Copy Image** · **Download PNG** · **Copy Table** · **Export CSV**
-
-### 6. Drive Backup
-- Downloads uploaded CSVs with standardised filenames
-- Individual download or **Download All (4 files)** at once
-- Direct link to the Drive backup folder
+| Others | Displayed as — |
 
 ---
 
-## CSV Format Reference
+### Delay Report
 
-### 9xxx / 1xxx
+Computes per-operator SMS response delay distribution.
 
-| Report | Required Columns |
-|---|---|
-| 9xxx | `clientId`, `a2pResponseCode` |
-| 1xxx | `clientId`, `applicableSmsGateway`, `ansResponseCode` |
-
-### 4xx/5xx HTTP
-
-| Column | Description |
-|---|---|
-| `ans_type` | Source identifier (e.g. `bl`, `rt/txn`, `mtn-proxy`) |
-| `event.original` | Nginx log line containing HTTP status code |
-
-### DLR
-
-| Column | Description |
-|---|---|
-| `message_body` | Log body containing `statusCode=XXXX` |
-
-### Delay
-
-| Column | Notes |
-|---|---|
-| `ansRequestTime` | When the request was made |
-| `ansResponseTime` | When the response arrived |
-| `applicableSmsGateway` | Operator name |
-| `@timestamp` | Optional — for time range detection |
-
-> All column matching is **case-insensitive**. Extra columns are ignored.
-
----
-
-## Daily Workflow
-
-1. Open `index.html` in any modern browser
-2. Select the report tab for the current shift
-3. Set **monitoring window** (From / To)
-4. Upload the ELK CSV export(s)
-5. Set **Prepared By** and **Status**
-6. Click **Generate Report Card**
-7. **Copy Image** → paste into WhatsApp
-8. **Copy Text** → paste as caption
-9. Go to **Drive Backup** → **Download All** → upload to Google Drive
-
----
-
-## Drive Backup — Naming Format
+**CSV columns required:** `ansRequestTime`, `ansResponseTime`, `applicableSmsGateway`  
+**Optional:** `@timestamp` for time range auto-detection
 
 ```
-ErrorType_AnsType_Date_StartHour.csv
+Delay (seconds) = ansResponseTime − ansRequestTime  (rounded to nearest second)
 ```
 
-| Token | Description | Example |
+- Drag & drop or browse CSV upload
+- Shows delay distribution pivot table and operator summary cards
+- Time range auto-detected from CSV
+- Output → **Generate Report Card** → Copy Image · Download PNG · Copy Table · Export CSV
+
+---
+
+### Drive Backup
+
+Downloads uploaded CSV files with standardised filenames for Google Drive archiving.
+
+- Individual download per file or **Download All** at once
+- Filenames based on monitoring window start time
+- Direct link to the backup folder
+
+**Naming format:**
+
+```
+ErrorType_AnsType_YYYYMMDD_HH.csv
+```
+
+| Token | Values | Example |
 |---|---|---|
-| `ErrorType` | `X9` for 9xxx, `X1` for 1xxx | `X9` |
-| `AnsType` | `M` for MNO, `I` for IPTSP | `M` |
-| `Date` | From date YYYYMMDD | `20260513` |
-| `StartHour` | From time hour HH | `06` |
+| ErrorType | `X9` (9xxx), `X1` (1xxx) | `X9` |
+| AnsType | `M` (MNO), `I` (IPTSP) | `M` |
+| Date | YYYYMMDD | `20260531` |
+| Hour | HH | `06` |
 
 **Examples:**
 ```
-X9_M_20260513_06.csv
-X9_I_20260513_06.csv
-X1_M_20260513_06.csv
-X1_I_20260513_06.csv
+X9_M_20260531_06.csv   ← 9xxx MNO, May 31 2026, 06:00
+X9_I_20260531_06.csv   ← 9xxx IPTSP
+X1_M_20260531_06.csv   ← 1xxx MNO
+X1_I_20260531_06.csv   ← 1xxx IPTSP
 ```
 
 **Drive folder structure:**
@@ -161,28 +155,50 @@ Report/
 
 ---
 
+## Daily Workflow
+
+```
+1.  Open index.html in Chrome or Edge
+2.  Select the report tab for the current shift
+3.  Upload the ELK CSV export
+      → Monitoring window fills automatically from @timestamp
+4.  Review the generated pivot table
+5.  Enter Prepared By name and set Status
+6.  Click Generate Report Card
+7.  Copy Image  → paste into WhatsApp
+8.  Copy Text   → paste as caption message
+9.  Go to Drive Backup → Download All → upload to Google Drive
+```
+
+For HTTP reports: upload CSV (optional) → verify source hits → Generate for WhatsApp → Copy Text.
+
+---
+
 ## Reset
 
-The **Reset** button (top-right) clears all uploaded files, generated tables, form fields, and resets monitoring windows. A confirmation prompt appears first.
+The **Reset** button in the top-right corner clears all uploaded files, generated tables, form fields, and resets monitoring windows. A confirmation prompt appears before any data is cleared.
 
 ---
 
 ## Deploy on GitHub Pages
 
-1. Create a new GitHub repository (e.g. `shift-report`)
-2. Upload all four files: `index.html`, `style.css`, `app.js`, `README.md`
-3. Go to **Settings → Pages**
-4. Source: `main` branch → `/ (root)` → **Save**
-5. Live at `https://<your-username>.github.io/shift-report/`
+```
+1.  Create a new GitHub repository  (e.g. shift-report)
+2.  Upload all four files: index.html  style.css  app.js  README.md
+3.  Settings → Pages → Source: main branch / (root) → Save
+4.  Live at: https://<your-username>.github.io/shift-report/
+```
+
+> Google Fonts and html2canvas are loaded from CDN — an internet connection is needed on first load. After that, the tool works fully offline.
 
 ---
 
 ## Privacy & Data
 
-- All processing is **local in the browser**
-- No data is sent to any server
-- No cookies, no tracking
-- Reset or close tab to clear all data
+- All CSV processing happens **locally in the browser**
+- No data is sent to any external server
+- No cookies, no tracking, no analytics
+- Closing the tab or clicking Reset clears everything
 
 ---
 
@@ -190,11 +206,20 @@ The **Reset** button (top-right) clears all uploaded files, generated tables, fo
 
 | Library | Version | Purpose |
 |---|---|---|
-| [DM Sans / DM Mono / Instrument Serif](https://fonts.google.com) | Google Fonts | Typography |
+| [DM Sans · DM Mono · Instrument Serif](https://fonts.google.com) | Google Fonts | Typography |
 | [html2canvas](https://html2canvas.hertzen.com/) | 1.4.1 | Report card image capture |
-
-Both loaded from CDN. Internet only needed on first load to cache fonts and html2canvas.
 
 ---
 
-*© 2026 Nickson Rizvi (Najmaz Sakib) · Infozillion Teletech Bd Ltd — Service Assurance*
+## Browser Compatibility
+
+| Browser | Support |
+|---|---|
+| Chrome 90+ | ✅ Full — including clipboard image copy |
+| Edge 90+ | ✅ Full |
+| Firefox 90+ | ✅ Full — clipboard image opens in new tab |
+| Safari 15+ | ⚠ Partial — use Download PNG instead of Copy Image |
+
+---
+
+*© 2026 Najmaz Sakib · Infozillion Teletech Bd Ltd — Service Assurance*
