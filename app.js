@@ -1100,6 +1100,7 @@ function generateDelayCard(){
   const toVal=document.getElementById('delay-fTo').value;
   const fromStr=fromVal?formatCardDT(new Date(fromVal)):'—';
   const toStr=toVal?formatCardDT(new Date(toVal)):'—';
+  const DELAY_PCT_THRESHOLD=30;
 
   // Build operator column headers with color tops
   const opClassMap={GrameenPhone:'rc-th-gp',Robi:'rc-th-robi',Banglalink:'rc-th-bl',Teletalk:'rc-th-tt'};
@@ -1123,6 +1124,21 @@ function generateDelayCard(){
   opArr.forEach(op=>{footHTML+=`<td>${(opTotals[op]||0).toLocaleString()}</td>`;});
   footHTML+=`<td>${grand.toLocaleString()}</td>`;
 
+  // % Delayed row — always shown, even if 0%
+  let delayedCount=0;
+  let pctRow=`<td style="text-align:left;font-weight:700;">% Delayed</td>`;
+  opArr.forEach(op=>{
+    const total=opTotals[op]||0;
+    const delayed=delayKeys.filter(d=>d>=DELAY_THRESHOLD).reduce((s,d)=>s+(pivot[d][op]||0),0);
+    delayedCount+=delayed;
+    const pct=total>0?Math.round(delayed/total*100):0;
+    const isIssue=pct>=DELAY_PCT_THRESHOLD;
+    pctRow+=`<td class="${isIssue?'rc-pct-issue':'rc-pct-ok'}">${pct}%</td>`;
+  });
+  const grandPct=grand>0?Math.round(delayedCount/grand*100):0;
+  const grandIsIssue=grandPct>=DELAY_PCT_THRESHOLD;
+  pctRow+=`<td class="${grandIsIssue?'rc-pct-issue':'rc-pct-ok'}">${grandPct}%</td>`;
+
   const statusHTML=status==='Normal'
     ?`<span class="rc-status-normal">Normal</span>`
     :`<span class="rc-status-issue">Issue</span>${issueText?` — <span class="rc-issue-text">${esc(issueText)}</span>`:''}`;
@@ -1134,7 +1150,10 @@ function generateDelayCard(){
     <table class="rc-table">
       <thead><tr>${thCells}</tr></thead>
       <tbody>${bodyHTML}</tbody>
-      <tfoot><tr>${footHTML}</tr></tfoot>
+      <tfoot>
+        <tr>${footHTML}</tr>
+        <tr class="rc-pct-row">${pctRow}</tr>
+      </tfoot>
     </table>
     <div class="rc-meta">
       <div class="rc-meta-line"><strong>Reporter:</strong> ${esc(reporter)}</div>
@@ -1222,6 +1241,9 @@ const rcStyles=`
 .rc-td-total{font-weight:600}
 .rc-table tfoot td{background:#EEF0F5!important;padding:8px 14px;border:1px solid #C0C4CE;border-top:2px solid #A0A4AE;font-weight:700;color:#1A1916;text-align:right;}
 .rc-table tfoot td:first-child{text-align:left;}
+.rc-pct-row td{background:#FFFFFF!important;border-top:1px solid #D0D4DE!important;font-weight:700;}
+.rc-pct-ok{color:#1A6B3C!important;}
+.rc-pct-issue{color:#B84E1A!important;background:#FDF0E8!important;}
 .rc-meta{margin-top:6px;}
 .rc-meta-line{font-size:.78rem;line-height:1.9;color:#1A1916;font-family:'DM Mono',monospace;}
 .rc-meta-line strong{font-weight:600}
