@@ -93,6 +93,17 @@ code {
   margin-top: 1px;
 }
 .header-right { display: flex; align-items: center; gap: 12px; }
+.version-badge {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+}
 .header-clock {
   font-family: var(--font-mono);
   font-size: 0.65rem;

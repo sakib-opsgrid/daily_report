@@ -3,6 +3,8 @@
 **Infozillion Teletech Bd Ltd**  
 *Built by Najmaz Sakib · Service Assurance Team*
 
+**Version:** v2.9.0
+
 ---
 
 A browser-based shift reporting tool that parses ELK Discover CSV exports, generates pivot tables and report cards, and produces WhatsApp-ready images — entirely in the browser, no installation or internet connection required after first load.
