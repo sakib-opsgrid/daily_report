@@ -854,3 +854,21 @@ code {
   color: var(--text-primary);
   box-shadow: 0 1px 3px rgba(26,25,22,.1);
 }
+
+/* ── DELAY ISSUE FLAG (30%+ delay) ──────────────────────────── */
+.op-card--issue {
+  background: var(--warn-bg);
+}
+.op-card--issue::before { background: var(--warn) !important; }
+.d-num-issue { color: var(--warn); font-weight: 700; }
+.d-pct-issue { color: var(--warn); font-weight: 600; }
+.op-card__flag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--warn);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #FDBA74;
+}

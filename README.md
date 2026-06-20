@@ -47,6 +47,7 @@ Tracks A2P response errors in the 9xxx range.
 - Upload separate CSVs for MNO and IPTSP using the segmented toggle
 - Monitoring window auto-filled from `@timestamp` column on upload
 - Generates a **clientId × a2pResponseCode** pivot table with Grand Total
+- **Auto status detection** — see below
 - Output → **Generate Report Card** → Copy Image · Download PNG · Copy Text
 
 ---
@@ -60,7 +61,29 @@ Tracks SMS answer response errors in the 1xxx range.
 - Upload separate CSVs for MNO and IPTSP using the segmented toggle
 - Monitoring window auto-filled from `@timestamp` column on upload
 - Generates a **clientId × Gateway × ansResponseCode** grouped pivot with subtotals
+- **Auto status detection** — see below
 - Output → **Generate Report Card** → Copy Image · Download PNG · Copy Text
+
+#### Auto Status Detection (9xxx / 1xxx)
+
+On CSV upload, the tool automatically checks each client's total error count:
+
+| Condition | Status | Action |
+|---|---|---|
+| Client total **< 3,000** | **Normal** | No action needed |
+| Client total **≥ 3,000** | **Issue** | Status auto-set, issue box auto-filled |
+
+When a client exceeds the threshold, the **Issue Description** box is filled automatically with a breakdown of which error code(s) — and for 1xxx, which gateway — are responsible:
+
+```
+FelnaDigital receiving 1008 errors (95,130)
+```
+
+```
+FelnaDigital receiving 1008 errors via Robi (95,130)
+```
+
+Multiple exceeding clients are listed on separate lines, highest count first. You can edit this text before generating the report card.
 
 ---
 
@@ -107,12 +130,25 @@ Computes per-operator SMS response delay distribution.
 **Optional:** `@timestamp` for time range auto-detection
 
 ```
-Delay (seconds) = ansResponseTime − ansRequestTime  (rounded to nearest second)
+Time to get response (seconds) = ansResponseTime − ansRequestTime
+(rounded to nearest second)
 ```
 
 - Drag & drop or browse CSV upload
-- Shows delay distribution pivot table and operator summary cards
-- Time range auto-detected from CSV
+- Pivot table column: **Time to get response (s)** × operator
+- Operator summary cards show total messages and **% delayed**
+
+#### Delay Issue Flag (30% threshold)
+
+Each operator card automatically flags when **30% or more** of its messages were delayed:
+
+| Delayed % | Card appearance |
+|---|---|
+| < 30% | Normal — neutral colors |
+| **≥ 30%** | **Highlighted orange** with **⚠ Inform client** flag |
+
+This makes it immediately clear which operator(s) need a client notification, without reading the full pivot table.
+
 - Output → **Generate Report Card** → Copy Image · Download PNG · Copy Table · Export CSV
 
 ---
@@ -162,8 +198,10 @@ Report/
 2.  Select the report tab for the current shift
 3.  Upload the ELK CSV export
       → Monitoring window fills automatically from @timestamp
+      → 9xxx/1xxx: Status auto-set based on 3,000 threshold
+      → Delay: operators ≥30% delayed flagged automatically
 4.  Review the generated pivot table
-5.  Enter Prepared By name and set Status
+5.  Enter Prepared By name (Status auto-filled where applicable)
 6.  Click Generate Report Card
 7.  Copy Image  → paste into WhatsApp
 8.  Copy Text   → paste as caption message

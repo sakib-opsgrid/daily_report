@@ -139,6 +139,50 @@ function switchTab(id,el){
   if(id==='backup') refreshBackup();
 }
 
+// ── AUTO THRESHOLD (9xxx/1xxx) ─────────────────────────────────────
+const THRESHOLD = 3000;
+
+function applyThreshold9(prefix, clientTotals, clientBreakdown){
+  const exceeding = Object.entries(clientTotals)
+    .filter(([,total]) => total >= THRESHOLD)
+    .sort((a,b) => b[1]-a[1]);
+
+  if(exceeding.length === 0){
+    setSt(prefix,'Normal');
+  } else {
+    setSt(prefix,'Issue');
+    const lines = exceeding.map(([cl]) => {
+      // List each code this client is receiving, sorted by count desc
+      const codes = clientBreakdown[cl].slice().sort((a,b)=>b.count-a.count);
+      return codes.map(({code,count}) =>
+        `${cl} receiving ${code} errors (${count.toLocaleString()})`
+      ).join('\n');
+    }).join('\n');
+    const issueBox = document.getElementById(`${prefix}-issue`);
+    if(issueBox) issueBox.value = lines;
+  }
+}
+
+function applyThreshold1(prefix, clientTotals, clientBreakdown){
+  const exceeding = Object.entries(clientTotals)
+    .filter(([,total]) => total >= THRESHOLD)
+    .sort((a,b) => b[1]-a[1]);
+
+  if(exceeding.length === 0){
+    setSt(prefix,'Normal');
+  } else {
+    setSt(prefix,'Issue');
+    const lines = exceeding.map(([cl]) => {
+      const items = clientBreakdown[cl].slice().sort((a,b)=>b.count-a.count);
+      return items.map(({gw,code,count}) =>
+        `${cl} receiving ${code} errors via ${gw} (${count.toLocaleString()})`
+      ).join('\n');
+    }).join('\n');
+    const issueBox = document.getElementById(`${prefix}-issue`);
+    if(issueBox) issueBox.value = lines;
+  }
+}
+
 // ── STATUS TOGGLE ─────────────────────────────────────────────────
 const statusMap={};
 ['9mno','9iptsp','1mno','1iptsp','http','dlr'].forEach(p=>{statusMap[p]='Normal';});
@@ -316,7 +360,24 @@ function renderPivot9(which,rows,clientKey,codeKey){
   sortedCodes.forEach(c=>{html+=`<td>${colTotals[c]||''}</td>`;});
   html+=`<td>${grand}</td></tr></tbody></table>`;
   document.getElementById(`pivot-9${which}`).innerHTML=html;
-  data9[`${which}_pivot`]={sortedClients,sortedCodes,counts,colTotals,grand};
+
+  // Per-client totals + code breakdown for threshold check
+  const clientTotals={};
+  const clientBreakdown={}; // client -> [{code, count}]
+  sortedClients.forEach(cl=>{
+    let t=0;
+    const codes=[];
+    sortedCodes.forEach(c=>{
+      const v=counts[`${cl}::${c}`]||0;
+      t+=v;
+      if(v>0) codes.push({code:c,count:v});
+    });
+    clientTotals[cl]=t;
+    clientBreakdown[cl]=codes;
+  });
+
+  data9[`${which}_pivot`]={sortedClients,sortedCodes,counts,colTotals,grand,clientTotals};
+  applyThreshold9(`9${which}`,clientTotals,clientBreakdown);
 }
 
 function buildScreenshot(prefix){
@@ -439,7 +500,7 @@ function renderPivot1(which,rows,clientKey,gwKey,codeKey){
   });
   html+=`</tr></thead><tbody>`;
 
-  const colTotals={}, gwTotals={};
+  const colTotals={}, gwTotals={}, clientTotals={}, clientBreakdown={};
   gwCodeCols.forEach(({gw,code})=>{colTotals[`${gw}::${code}`]=0;});
   sortedGWs.forEach(gw=>{gwTotals[gw]=0;});
   let grand=0;
@@ -447,17 +508,21 @@ function renderPivot1(which,rows,clientKey,gwKey,codeKey){
   sortedClients.forEach(cl=>{
     let rowTotal=0;
     let row=`<tr><td>${cl}</td>`;
+    const breakdown=[];
     sortedGWs.forEach(gw=>{
       let gwRow=0;
       gwCodeCols.filter(x=>x.gw===gw).forEach(({code})=>{
         const v=counts[`${cl}::${gw}::${code}`]||0;
         colTotals[`${gw}::${code}`]+=v; gwTotals[gw]+=v; gwRow+=v;
+        if(v>0) breakdown.push({gw,code,count:v});
         row+=`<td class="${v===0?'zero':'has-val'}">${v===0?'':v}</td>`;
       });
       rowTotal+=gwRow;
       row+=`<td class="${gwRow===0?'zero':'has-val'}">${gwRow||''}</td>`;
     });
     grand+=rowTotal;
+    clientTotals[cl]=rowTotal;
+    clientBreakdown[cl]=breakdown;
     row+=`<td class="has-val">${rowTotal||''}</td></tr>`;
     html+=row;
   });
@@ -469,7 +534,8 @@ function renderPivot1(which,rows,clientKey,gwKey,codeKey){
   html+=`<td>${grand}</td></tr></tbody></table>`;
 
   document.getElementById(`pivot-1${which}`).innerHTML=html;
-  data1[`${which}_pivot`]={sortedClients,gwCodeCols,sortedGWs,gwGroups,counts,colTotals,gwTotals,grand};
+  data1[`${which}_pivot`]={sortedClients,gwCodeCols,sortedGWs,gwGroups,counts,colTotals,gwTotals,grand,clientTotals};
+  applyThreshold1(`1${which}`,clientTotals,clientBreakdown);
 }
 
 function buildScreenshot1(prefix){
@@ -978,7 +1044,7 @@ function renderDelayResults(data,fileName,rowCount){
   const thead=document.querySelector('#delay-pivotTable thead');
   const tbody=document.querySelector('#delay-pivotTable tbody');
   const tfoot=document.querySelector('#delay-pivotTable tfoot');
-  thead.innerHTML=`<tr><th>Delay (s)</th>${opArr.map(op=>`<th>${op}</th>`).join('')}<th>Total</th></tr>`;
+  thead.innerHTML=`<tr><th>Time to get response (s)</th>${opArr.map(op=>`<th>${op}</th>`).join('')}<th>Total</th></tr>`;
   tbody.innerHTML=delayKeys.map(d=>{
     const isDelayed=d>=DELAY_THRESHOLD;
     return `<tr><td style="${isDelayed?'color:var(--warn);font-weight:600;':''}">${d}</td>${opArr.map(op=>{
@@ -989,6 +1055,7 @@ function renderDelayResults(data,fileName,rowCount){
   tfoot.innerHTML=`<tr class="grand-row"><td>Grand Total</td>${opArr.map(op=>`<td>${opTotals[op]||0}</td>`).join('')}<td>${grand}</td></tr>`;
 
   // Op cards
+  const DELAY_PCT_THRESHOLD=30;
   const cards=document.getElementById('delay-opCards');
   const withTotal=[...opArr,null];
   cards.innerHTML=withTotal.map(op=>{
@@ -996,20 +1063,24 @@ function renderDelayResults(data,fileName,rowCount){
       const delayed=Object.entries(opTotals).reduce((s,[,v])=>s+v,0)-delayKeys.filter(d=>d<DELAY_THRESHOLD).reduce((s,d)=>s+(delayTotals[d]||0),0);
       const total=grand;
       const pct=total>0?Math.round(delayed/total*100):0;
-      return `<div class="op-card c-total">
+      const isIssue=pct>=DELAY_PCT_THRESHOLD;
+      return `<div class="op-card c-total${isIssue?' op-card--issue':''}">
         <div class="op-card__name">All Operators</div>
         <div class="op-card__total">${total.toLocaleString()}</div>
-        <div class="op-card__delayed">${delayed>0?`<span class="d-num">${delayed.toLocaleString()}</span> <span class="d-pct">delayed (${pct}%)</span>`:`<span class="d-none">No delays</span>`}</div>
+        <div class="op-card__delayed">${delayed>0?`<span class="${isIssue?'d-num-issue':'d-num'}">${delayed.toLocaleString()}</span> <span class="${isIssue?'d-pct-issue':'d-pct'}">delayed (${pct}%)</span>`:`<span class="d-none">No delays</span>`}</div>
+        ${isIssue?`<div class="op-card__flag">⚠ Inform client</div>`:''}
       </div>`;
     }
     const total=opTotals[op]||0;
     const delayed=delayKeys.filter(d=>d>=DELAY_THRESHOLD).reduce((s,d)=>s+(pivot[d][op]||0),0);
     const pct=total>0?Math.round(delayed/total*100):0;
+    const isIssue=pct>=DELAY_PCT_THRESHOLD;
     const cls=OP_CLASS[op]||'';
-    return `<div class="op-card ${cls?'c-'+cls:''}">
+    return `<div class="op-card ${cls?'c-'+cls:''}${isIssue?' op-card--issue':''}">
       <div class="op-card__name">${op}</div>
       <div class="op-card__total">${total.toLocaleString()}</div>
-      <div class="op-card__delayed">${delayed>0?`<span class="d-num">${delayed.toLocaleString()}</span> <span class="d-pct">delayed (${pct}%)</span>`:`<span class="d-none">No delays</span>`}</div>
+      <div class="op-card__delayed">${delayed>0?`<span class="${isIssue?'d-num-issue':'d-num'}">${delayed.toLocaleString()}</span> <span class="${isIssue?'d-pct-issue':'d-pct'}">delayed (${pct}%)</span>`:`<span class="d-none">No delays</span>`}</div>
+      ${isIssue?`<div class="op-card__flag">⚠ Inform client</div>`:''}
     </div>`;
   }).join('');
 }
@@ -1032,7 +1103,7 @@ function generateDelayCard(){
 
   // Build operator column headers with color tops
   const opClassMap={GrameenPhone:'rc-th-gp',Robi:'rc-th-robi',Banglalink:'rc-th-bl',Teletalk:'rc-th-tt'};
-  let thCells=`<th style="text-align:left;">Count of delay</th>`;
+  let thCells=`<th style="text-align:left;">Time to get response (s)</th>`;
   opArr.forEach(op=>{thCells+=`<th class="${opClassMap[op]||'rc-th-blank'}">${op}</th>`;});
   thCells+=`<th class="rc-th-grand">Grand Total</th>`;
 
@@ -1104,14 +1175,14 @@ async function captureDelayCard(download){
 }
 
 function copyDelayTable({pivot,delayKeys,opArr,opTotals,delayTotals,grand}){
-  const rows=[['Count of delay',...opArr,'Grand Total'].join('\t')];
+  const rows=[['Time to get response (s)',...opArr,'Grand Total'].join('\t')];
   for(const d of delayKeys){const cells=[d];for(const op of opArr)cells.push(pivot[d][op]||0);cells.push(delayTotals[d]||0);rows.push(cells.join('\t'));}
   const ft=['Grand Total'];for(const op of opArr)ft.push(opTotals[op]||0);ft.push(grand);rows.push(ft.join('\t'));
   navigator.clipboard.writeText(rows.join('\n')).then(()=>showToast('Table copied — paste into Excel')).catch(()=>showToast('Copy failed'));
 }
 
 function exportDelayCSV({pivot,delayKeys,opArr,opTotals,delayTotals,grand}){
-  const rows=[['Count of delay',...opArr,'Grand Total'].join(',')];
+  const rows=[['Time to get response (s)',...opArr,'Grand Total'].join(',')];
   for(const d of delayKeys){const cells=[d];for(const op of opArr)cells.push(pivot[d][op]||0);cells.push(delayTotals[d]||0);rows.push(cells.join(','));}
   const ft=['Grand Total'];for(const op of opArr)ft.push(opTotals[op]||0);ft.push(grand);rows.push(ft.join(','));
   const blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'});
